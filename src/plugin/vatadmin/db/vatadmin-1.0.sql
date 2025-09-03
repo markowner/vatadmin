@@ -8,11 +8,11 @@ DROP TABLE IF EXISTS `vat_admin_config`;
 CREATE TABLE `vat_admin_config` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
   `group_id` int NOT NULL DEFAULT '0' COMMENT '配置组',
-  `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '名称',
-  `code` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '键',
-  `value` varchar(1280) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '值',
-  `view` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '组件',
-  `view_option_json` varchar(1280) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '组件选项',
+  `name` varchar(64) NOT NULL COMMENT '名称',
+  `code` varchar(64) NOT NULL COMMENT '键',
+  `value` varchar(1280) NOT NULL DEFAULT '' COMMENT '值',
+  `view` varchar(64) NOT NULL DEFAULT '' COMMENT '组件',
+  `view_option_json` varchar(1280) NOT NULL DEFAULT '' COMMENT '组件选项',
   `sortrank` int NOT NULL DEFAULT '0' COMMENT '排序',
   `open_front` int NOT NULL DEFAULT '0' COMMENT '公开前端',
   `status` int NOT NULL DEFAULT '0' COMMENT '状态',
@@ -20,7 +20,7 @@ CREATE TABLE `vat_admin_config` (
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uni_code` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='配置表';
+) ENGINE=InnoDB COMMENT='配置表';
 
 -- ----------------------------
 -- Records of vat_admin_config
@@ -42,14 +42,14 @@ COMMIT;
 DROP TABLE IF EXISTS `vat_admin_config_group`;
 CREATE TABLE `vat_admin_config_group` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '名称',
-  `code` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '标识',
+  `name` varchar(64) NOT NULL COMMENT '名称',
+  `code` varchar(64) NOT NULL COMMENT '标识',
   `status` int NOT NULL DEFAULT '0' COMMENT '状态',
   `createtime` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uni_name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='配置组';
+) ENGINE=InnoDB COMMENT='配置组';
 
 -- ----------------------------
 -- Records of vat_admin_config_group
@@ -65,14 +65,14 @@ COMMIT;
 DROP TABLE IF EXISTS `vat_admin_crontab`;
 CREATE TABLE `vat_admin_crontab` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务标题',
+  `title` varchar(100) NOT NULL COMMENT '任务标题',
   `type` tinyint(1) NOT NULL DEFAULT '1' COMMENT '任务类型 (1 command, 2 class, 3 url, 4 eval)',
-  `rule` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务执行表达式',
-  `target` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '调用任务字符串',
-  `parameter` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '任务调用参数',
+  `rule` varchar(100) NOT NULL COMMENT '任务执行表达式',
+  `target` varchar(150) NOT NULL DEFAULT '' COMMENT '调用任务字符串',
+  `parameter` varchar(500) DEFAULT NULL COMMENT '任务调用参数',
   `running_times` int NOT NULL DEFAULT '0' COMMENT '已运行次数',
   `last_running_time` int NOT NULL DEFAULT '0' COMMENT '上次运行时间',
-  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '备注',
+  `remark` varchar(255) NOT NULL COMMENT '备注',
   `sort` int NOT NULL DEFAULT '0' COMMENT '排序，越大越前',
   `status` tinyint NOT NULL DEFAULT '0' COMMENT '任务状态状态[0:禁用;1启用]',
   `create_time` int NOT NULL DEFAULT '0' COMMENT '创建时间',
@@ -83,7 +83,7 @@ CREATE TABLE `vat_admin_crontab` (
   KEY `create_time` (`create_time`) USING BTREE,
   KEY `status` (`status`) USING BTREE,
   KEY `type` (`type`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC COMMENT='定时器任务表';
+) ENGINE=InnoDB COMMENT='定时器任务表';
 
 
 -- ----------------------------
@@ -93,17 +93,17 @@ DROP TABLE IF EXISTS `vat_admin_crontab_log`;
 CREATE TABLE `vat_admin_crontab_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `crontab_id` bigint unsigned NOT NULL COMMENT '任务id',
-  `target` varchar(255) COLLATE utf8mb4_general_ci NOT NULL COMMENT '任务调用目标字符串',
-  `parameter` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '任务调用参数',
-  `exception` text COLLATE utf8mb4_general_ci COMMENT '任务执行或者异常信息输出',
+  `target` varchar(255) NOT NULL COMMENT '任务调用目标字符串',
+  `parameter` varchar(500) DEFAULT NULL COMMENT '任务调用参数',
+  `exception` text COMMENT '任务执行或者异常信息输出',
   `return_code` tinyint(1) NOT NULL DEFAULT '0' COMMENT '执行返回状态[0成功; 1失败]',
-  `running_time` varchar(10) COLLATE utf8mb4_general_ci NOT NULL COMMENT '执行所用时间',
+  `running_time` varchar(10) NOT NULL COMMENT '执行所用时间',
   `create_time` int NOT NULL DEFAULT '0' COMMENT '创建时间',
   `update_time` int NOT NULL DEFAULT '0' COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
   KEY `create_time` (`create_time`) USING BTREE,
   KEY `crontab_id` (`crontab_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC COMMENT='定时器任务执行日志表';
+) ENGINE=InnoDB COMMENT='定时器任务执行日志表';
 
 -- ----------------------------
 -- Table structure for vat_admin_department
@@ -111,16 +111,16 @@ CREATE TABLE `vat_admin_crontab_log` (
 DROP TABLE IF EXISTS `vat_admin_department`;
 CREATE TABLE `vat_admin_department` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '名称',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '名称',
   `parent_id` int NOT NULL DEFAULT '0' COMMENT '上级',
-  `level` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '级别',
+  `level` varchar(255) NOT NULL DEFAULT '' COMMENT '级别',
   `sortrank` int NOT NULL DEFAULT '0' COMMENT '排序',
   `status` int NOT NULL DEFAULT '0' COMMENT '状态',
   `createtime` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uni_name` (`name`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='用户部门表';
+) ENGINE=InnoDB COMMENT='用户部门表';
 
 -- ----------------------------
 -- Table structure for vat_admin_dict
@@ -128,15 +128,15 @@ CREATE TABLE `vat_admin_department` (
 DROP TABLE IF EXISTS `vat_admin_dict`;
 CREATE TABLE `vat_admin_dict` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '名称',
-  `code` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '键',
-  `value` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '值',
+  `name` varchar(64) NOT NULL COMMENT '名称',
+  `code` varchar(64) NOT NULL COMMENT '键',
+  `value` text NOT NULL COMMENT '值',
   `status` int NOT NULL DEFAULT '0' COMMENT '状态',
   `createtime` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uni_code` (`code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='字典表';
+) ENGINE=InnoDB COMMENT='字典表';
 
 -- ----------------------------
 -- Records of vat_admin_dict
@@ -159,18 +159,18 @@ COMMIT;
 DROP TABLE IF EXISTS `vat_admin_log_login`;
 CREATE TABLE `vat_admin_log_login` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `title` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '标题',
-  `memo` varchar(640) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '描述',
-  `ip` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'IP地址',
-  `ip_location` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '登录地址',
-  `browser` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '浏览器',
-  `system` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '系统',
-  `user_agent` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '用户代理',
-  `username` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户账号',
+  `title` varchar(64) NOT NULL DEFAULT '' COMMENT '标题',
+  `memo` varchar(640) NOT NULL DEFAULT '' COMMENT '描述',
+  `ip` varchar(32) NOT NULL DEFAULT '' COMMENT 'IP地址',
+  `ip_location` varchar(200) NOT NULL DEFAULT '' COMMENT '登录地址',
+  `browser` varchar(32) NOT NULL DEFAULT '' COMMENT '浏览器',
+  `system` varchar(64) NOT NULL DEFAULT '' COMMENT '系统',
+  `user_agent` varchar(255) NOT NULL DEFAULT '' COMMENT '用户代理',
+  `username` varchar(64) NOT NULL COMMENT '用户账号',
   `createtime` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='登录日志表';
+) ENGINE=InnoDB AUTO_INCREMENT=69 COMMENT='登录日志表';
 
 -- ----------------------------
 -- Table structure for vat_admin_log_operation
@@ -178,20 +178,20 @@ CREATE TABLE `vat_admin_log_login` (
 DROP TABLE IF EXISTS `vat_admin_log_operation`;
 CREATE TABLE `vat_admin_log_operation` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `title` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '名称',
-  `route` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '路由地址',
-  `method` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '请求方法',
-  `params` varchar(1280) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '请求参数',
-  `ip` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT 'IP地址',
-  `ip_location` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '操作地址',
-  `browser` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '浏览器',
-  `system` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '系统',
-  `user_agent` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '用户代理',
+  `title` varchar(64) NOT NULL DEFAULT '' COMMENT '名称',
+  `route` varchar(255) NOT NULL DEFAULT '' COMMENT '路由地址',
+  `method` varchar(16) NOT NULL DEFAULT '' COMMENT '请求方法',
+  `params` varchar(1280) NOT NULL DEFAULT '' COMMENT '请求参数',
+  `ip` varchar(32) NOT NULL DEFAULT '' COMMENT 'IP地址',
+  `ip_location` varchar(200) NOT NULL DEFAULT '' COMMENT '操作地址',
+  `browser` varchar(32) NOT NULL DEFAULT '' COMMENT '浏览器',
+  `system` varchar(64) NOT NULL DEFAULT '' COMMENT '系统',
+  `user_agent` varchar(255) NOT NULL DEFAULT '' COMMENT '用户代理',
   `admin_id` int NOT NULL DEFAULT '0' COMMENT '用户',
   `createtime` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
+) ENGINE=InnoDB COMMENT='操作日志表';
 
 -- ----------------------------
 -- Table structure for vat_admin_menu
@@ -199,20 +199,20 @@ CREATE TABLE `vat_admin_log_operation` (
 DROP TABLE IF EXISTS `vat_admin_menu`;
 CREATE TABLE `vat_admin_menu` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '菜单名称',
-  `path` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '路径',
-  `component` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '组件',
-  `icon` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '图标',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '菜单名称',
+  `path` varchar(200) NOT NULL DEFAULT '' COMMENT '路径',
+  `component` varchar(200) NOT NULL DEFAULT '' COMMENT '组件',
+  `icon` varchar(32) NOT NULL DEFAULT '' COMMENT '图标',
   `parent_id` int NOT NULL DEFAULT '0' COMMENT '上级',
-  `active` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '上级高亮地址',
+  `active` varchar(200) NOT NULL DEFAULT '' COMMENT '上级高亮地址',
   `hidden` int NOT NULL DEFAULT '0' COMMENT '是否显示',
   `hidden_breadcrumb` int NOT NULL DEFAULT '0' COMMENT '隐藏面包屑',
   `affix` int NOT NULL DEFAULT '0' COMMENT '固定菜单',
-  `type` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'menu' COMMENT '类型',
+  `type` varchar(32) NOT NULL DEFAULT 'menu' COMMENT '类型',
   `fullpage` int NOT NULL DEFAULT '0' COMMENT '整页路由',
   `is_permission` int NOT NULL DEFAULT '1' COMMENT '权限验证',
-  `permission_route` varchar(640) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '权限路由',
-  `redirect` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '跳转',
+  `permission_route` varchar(640) NOT NULL DEFAULT '' COMMENT '权限路由',
+  `redirect` varchar(255) NOT NULL DEFAULT '' COMMENT '跳转',
   `cached` int NOT NULL DEFAULT '0' COMMENT '页面缓存',
   `sortrank` int NOT NULL DEFAULT '0' COMMENT '排序',
   `platform_id` int NOT NULL DEFAULT '0' COMMENT '平台',
@@ -221,7 +221,7 @@ CREATE TABLE `vat_admin_menu` (
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uni_path` (`path`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='菜单表';
+) ENGINE=InnoDB COMMENT='菜单表';
 
 -- ----------------------------
 -- Records of vat_admin_menu
@@ -356,14 +356,14 @@ CREATE TABLE `vat_admin_notice` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `admin_id` int NOT NULL DEFAULT '0' COMMENT '用户',
   `type` int NOT NULL DEFAULT '0' COMMENT '类型',
-  `title` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '标题',
-  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '内容',
+  `title` varchar(255) NOT NULL DEFAULT '' COMMENT '标题',
+  `content` text COMMENT '内容',
   `is_read` tinyint(1) NOT NULL DEFAULT '0' COMMENT '已读',
   `createtime` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   KEY `admin_id` (`admin_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='消息通知表';
+) ENGINE=InnoDB COMMENT='消息通知表';
 
 
 -- ----------------------------
@@ -372,8 +372,8 @@ CREATE TABLE `vat_admin_notice` (
 DROP TABLE IF EXISTS `vat_admin_role`;
 CREATE TABLE `vat_admin_role` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '名称',
-  `code` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '标识',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '名称',
+  `code` varchar(255) NOT NULL DEFAULT '' COMMENT '标识',
   `data_type` int NOT NULL DEFAULT '0' COMMENT '数据权限类型',
   `parent_id` int NOT NULL DEFAULT '0' COMMENT '上级',
   `sortrank` int NOT NULL DEFAULT '0' COMMENT '排序',
@@ -382,7 +382,7 @@ CREATE TABLE `vat_admin_role` (
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uni_name` (`name`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='用户角色表';
+) ENGINE=InnoDB COMMENT='用户角色表';
 
 -- ----------------------------
 -- Records of vat_admin_role
@@ -404,7 +404,7 @@ CREATE TABLE `vat_admin_role_menu` (
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uni_menu_role` (`menu_id`,`role_id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='角色菜单表';
+) ENGINE=InnoDB COMMENT='角色菜单表';
 
 
 -- ----------------------------
@@ -413,14 +413,14 @@ CREATE TABLE `vat_admin_role_menu` (
 DROP TABLE IF EXISTS `vat_admin_user`;
 CREATE TABLE `vat_admin_user` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `department_id` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '部门',
-  `name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '姓名',
-  `username` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '账号',
-  `mobile` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '手机号',
-  `email` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '邮箱',
-  `password` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '密码',
-  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '头像',
-  `roles` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '角色',
+  `department_id` varchar(200) NOT NULL DEFAULT '' COMMENT '部门',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '姓名',
+  `username` varchar(64) NOT NULL DEFAULT '' COMMENT '账号',
+  `mobile` varchar(16) NOT NULL DEFAULT '' COMMENT '手机号',
+  `email` varchar(64) NOT NULL DEFAULT '' COMMENT '邮箱',
+  `password` varchar(64) NOT NULL DEFAULT '' COMMENT '密码',
+  `avatar` varchar(255) NOT NULL DEFAULT '' COMMENT '头像',
+  `roles` varchar(200) NOT NULL DEFAULT '' COMMENT '角色',
   `online_status` int NOT NULL DEFAULT '0' COMMENT '在线状态',
   `last_login_time` datetime DEFAULT NULL COMMENT '最后在线时间',
   `status` int NOT NULL DEFAULT '0' COMMENT '状态',
@@ -429,7 +429,7 @@ CREATE TABLE `vat_admin_user` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `uni_username` (`username`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='用户表';
+) ENGINE=InnoDB COMMENT='用户表';
 
 -- ----------------------------
 -- Records of vat_admin_user
@@ -444,22 +444,22 @@ COMMIT;
 DROP TABLE IF EXISTS `vat_pages`;
 CREATE TABLE `vat_pages` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
-  `table` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '表名',
-  `name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '名称',
-  `build_project` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '项目',
-  `build_app_name` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '应用名称',
-  `build_controller` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '控制器',
-  `build_model` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '模型',
+  `table` varchar(64) NOT NULL DEFAULT '' COMMENT '表名',
+  `name` varchar(64) NOT NULL DEFAULT '' COMMENT '名称',
+  `build_project` varchar(64) NOT NULL DEFAULT '' COMMENT '项目',
+  `build_app_name` varchar(32) NOT NULL DEFAULT '' COMMENT '应用名称',
+  `build_controller` varchar(64) NOT NULL DEFAULT '' COMMENT '控制器',
+  `build_model` varchar(64) NOT NULL DEFAULT '' COMMENT '模型',
   `build_menu` int NOT NULL DEFAULT '0' COMMENT '菜单',
-  `build_menu_name` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '菜单名称',
-  `build_view` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '视图',
-  `tpl_json` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '合并模版数据',
-  `tpl_system_json` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT '系统模版数据',
+  `build_menu_name` varchar(64) NOT NULL DEFAULT '' COMMENT '菜单名称',
+  `build_view` varchar(128) NOT NULL DEFAULT '' COMMENT '视图',
+  `tpl_json` text COMMENT '合并模版数据',
+  `tpl_system_json` text COMMENT '系统模版数据',
   `status` int NOT NULL DEFAULT '0' COMMENT '状态',
   `createtime` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='页面表';
+) ENGINE=InnoDB COMMENT='页面表';
 
 -- ----------------------------
 -- Records of vat_pages
@@ -488,13 +488,13 @@ DROP TABLE IF EXISTS `vat_upload_log`;
 CREATE TABLE `vat_upload_log` (
   `id` int NOT NULL AUTO_INCREMENT,
   `admin_id` int NOT NULL DEFAULT '0' COMMENT '用户',
-  `params` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '参数',
-  `event_key` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '事件',
-  `content` varchar(1280) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '内容',
-  `event_result` varchar(320) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '执行结果',
+  `params` varchar(200) NOT NULL DEFAULT '' COMMENT '参数',
+  `event_key` varchar(200) NOT NULL DEFAULT '' COMMENT '事件',
+  `content` varchar(1280) NOT NULL DEFAULT '' COMMENT '内容',
+  `event_result` varchar(320) NOT NULL DEFAULT '' COMMENT '执行结果',
   `createime` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updatetime` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='导入日志表';
+) ENGINE=InnoDB COMMENT='导入日志表';
 
 SET FOREIGN_KEY_CHECKS = 1;
