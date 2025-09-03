@@ -1,0 +1,33 @@
+<?php
+
+namespace plugin\vatadmin\app\model{#build_model#};
+
+use think\Model;
+
+/**
+{#build_model_field#}
+ */
+class {#build_model_name#} extends Model
+{
+    /**
+     * The connection name for the model.
+     *
+     * @var string|null
+     */
+    protected $connection = 'mysql';
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = '{#table#}';
+
+    /**
+     * The primary key associated with the table.
+     *
+     * @var string
+     */
+    protected $pk = 'id';
+
+}

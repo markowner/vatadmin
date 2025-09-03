@@ -1,0 +1,18 @@
+<?php
+
+namespace plugin\vatadmin\app\{#build_app_name#}\controller{#build_controller_dir#};
+
+use plugin\vatadmin\app\controller\BaseController;
+use support\Container;
+
+/**
+ * @property \app\model{#build_model_dir#}\{#build_model_name#} $model
+ */
+class {#build_controller_name#}Controller extends BaseController{
+
+    public function __construct()
+    {
+        $this->model = Container::get(\app\model{#build_model_dir#}\{#build_model_name#}::class);
+    }
+}
+

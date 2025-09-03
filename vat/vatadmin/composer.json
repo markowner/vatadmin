@@ -1,0 +1,31 @@
+{
+    "name": "vat/vatadmin",
+    "description": "webman plugin",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Vat\\Vatadmin\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "markowner",
+            "email": "314620891@qq.com"
+        }
+    ],
+    "require": {
+        "webman/think-orm": "^2.1",
+        "webman/cache": "^2.1",
+        "webman/redis": "^2.1",
+        "webman/event": "^1.0",
+        "webman/push": "^1.1",
+        "tinywan/jwt": "^1.11",
+        "tinywan/exception-handler": "^1.6",
+        "shopwwi/webman-filesystem": "^2.0",
+        "rap2hpoutre/fast-excel": "^5.6",
+        "zoujingli/ip2region": "^2.0",
+        "kkokk/poster": "^2.3",
+        "yzh52521/webman-task": "^1.48",
+        "vlucas/phpdotenv": "^5.6"
+    }
+}

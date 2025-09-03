@@ -1,0 +1,145 @@
+<template>
+  <!-- 列表 -->
+  <VatPage
+      ref="vPage"
+      :fields="state.pageJson.fields"
+      :api-list="state.pageJson.api"
+      :columns="state.pageJson.columns"
+      :tools="state.pageJson.tools"
+      @toolsChange="toolsChange">
+  </VatPage>
+  <!-- 添加编辑 -->
+  <Edit ref="editForm" @submit="toSubmitComplete"></Edit>
+</template>
+<script setup>
+  import {inject} from "vue"
+  import { NButton } from 'naive-ui'
+  import Request from '@/utils/axios'
+  import VatPage from "@/components/VatPage.vue"
+  import Edit from "./edit.vue"
+  import pageJsonData from '@/vat/pages/{#page_name#}.json'
+
+  const tools = inject('tools')
+  const vPage = ref(null)
+  const editForm = ref(null)
+
+  //构建数据列
+  let column = tools.pages.buildColumns(pageJsonData)
+
+  /**
+   * 操作列
+   * @param row
+   * @param index
+   * @returns {*[]}
+   */
+  function handleColumn(row, index) {
+    let columns = []
+    if (pageJsonData.tools.edit.show) {
+      columns.push(
+          h(NButton,
+              {
+                size: 'tiny',
+                type: 'primary',
+                secondary: true,
+                onClick: () => {
+                  editForm.value.type('edit').injectData(row).show()
+                }
+              },
+              {default: () => '编辑'}
+          )
+      )
+    }
+    if (pageJsonData.tools.delete.show) {
+      columns.push(
+          h(NButton,
+              {
+                size: 'tiny',
+                type: 'error',
+                secondary: true,
+                onClick: () => {
+                  tools.notice.dialog.warning({
+                    title: '警告',
+                    content: '你确定要删除此数据吗？',
+                    positiveText: '确定',
+                    negativeText: '取消',
+                    onPositiveClick: () => {
+                      Request.request(pageJsonData.api_list.delete, {ids: row.id}).then(res => {
+                        tools.notice.message.success(res.msg)
+                      }).catch(err => {
+                        console.log(err)
+                      })
+                    },
+                    onNegativeClick: () => {
+
+                    }
+                  })
+                }
+              },
+              {default: () => '删除'}
+          )
+      )
+    }
+    return columns
+  }
+
+  column.handle = {
+    title: '操作',
+    key: 'handle',
+    width: 100,
+    fixed: 'right',
+    render: (row, index) => {
+      const defaultColumn = handleColumn(row, index)
+      return h('div', {class: 'flex gap'}, {
+        default: () => {
+          return [...defaultColumn]
+        }
+      })
+    }
+  }
+
+  const state = reactive({
+    pageJson: {
+      api: pageJsonData.api_list,
+      columns: tools.pages.sortColumns(Object.values(column)),
+      fields: tools.pages.buildSearch(pageJsonData.fields),
+      tools: pageJsonData.tools
+    }
+  })
+
+  /**
+   * tools组件change事件
+   * @param type
+   * @param event
+   * @param ids
+   */
+  function toolsChange(type, event, ids){
+    switch(type){
+      case 'add':
+        editForm.value.type('add').show()
+        break;
+      case 'batch':
+        if(ids.length < 1){
+          return tools.notice.message.error('请先选择')
+        }
+        break;
+      case 'download':
+        pageJsonData.api_list.download.url += event
+        Request.request(pageJsonData.api_list.download, {filter: JSON.stringify(vPage.value.state.params)}).then(res => {
+          tools.notice.message.success(res.msg)
+        }).catch(err => {
+          console.log(err)
+        })
+        break;
+      default:
+        break;
+    }
+  }
+
+  /**
+   * 添加编辑提交完成
+   */
+  function toSubmitComplete(){
+    vPage.value.refresh()
+  }
+
+</script>
