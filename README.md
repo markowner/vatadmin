@@ -7,7 +7,7 @@ composer create-project workerman/webman:~2.0
 ```
 ### 在webman框架中安装vatadmin插件
 ```bash
-composer require markowner/vatadmin
+composer require vat/vatadmin
 ```
 
 ### 启动webman
