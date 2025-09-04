@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\system;
 
@@ -7,6 +8,9 @@ use plugin\vatadmin\app\controller\BaseController;
 use support\Container;
 use support\Request;
 
+/**
+ * @property \plugin\vatadmin\app\model\admin\AdminConfig $model
+ */
 class ConfigController extends BaseController{
 
     public function __construct()

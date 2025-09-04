@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller;
 
@@ -174,7 +175,6 @@ class BaseController{
     /**
      * 禁用解锁
      * @param Request $request
-     * @return mixed
      */
     public function lock(Request $request){
         $ids = $request->input('ids');
@@ -197,7 +197,6 @@ class BaseController{
     /**
      * 添加编辑
      * @param Request $request
-     * @return \support\Response
      */
     public function edit(Request $request){
         $data = $request->post();
@@ -463,7 +462,6 @@ class BaseController{
 
     /**
      * 验证数据
-     * @return void
      */
     public function validate($rules){
         Validate::check($rules);

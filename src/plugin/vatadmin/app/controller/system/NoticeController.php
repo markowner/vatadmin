@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\system;
 
@@ -8,6 +9,9 @@ use support\Container;
 use support\Request;
 use Tinywan\Jwt\JwtToken;
 
+/**
+ * @property \plugin\vatadmin\app\model\admin\AdminNotice $model
+ */
 class NoticeController extends BaseController{
 
     public function __construct()

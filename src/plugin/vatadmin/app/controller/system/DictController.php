@@ -1,14 +1,16 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\system;
 
 use plugin\vatadmin\app\model\admin\AdminDict;
 use plugin\vatadmin\app\controller\BaseController;
-use support\Cache;
 use support\Container;
-use support\Redis;
 use support\Request;
 
+/**
+ * @property \plugin\vatadmin\app\model\admin\AdminDict $model
+ */
 class DictController extends BaseController{
 
     public function __construct()
@@ -33,7 +35,6 @@ class DictController extends BaseController{
     }
 
     public function after($type, $model){
-//            Redis::hSet(getenv('VAT_ADMIN_DICT_KEY'), $model->code, $model->value);
         AdminDict::refreshCache();
     }
 }

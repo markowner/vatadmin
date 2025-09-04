@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\system;
 
@@ -6,6 +7,9 @@ use plugin\vatadmin\app\controller\BaseController;
 use support\Container;
 use Tinywan\Jwt\JwtToken;
 
+/**
+ * @property \plugin\vatadmin\app\model\admin\AdminLogLogin $model
+ */
 class LogLoginController extends BaseController{
 
     public function __construct()

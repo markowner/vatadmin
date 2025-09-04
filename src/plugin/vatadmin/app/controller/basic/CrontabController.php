@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\basic;
 
@@ -7,6 +8,9 @@ use support\Container;
 use support\Log;
 use support\Request;
 
+/**
+ * @property \plugin\vatadmin\app\model\admin\Crontab $model
+ */
 class CrontabController extends BaseController{
 
     public function __construct()

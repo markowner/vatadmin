@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\basic;
 
@@ -100,9 +101,9 @@ REDIS_PORT = 6379
 REDIS_PASSWORD = ''
 REDIS_DB = 0
 
-VAT_ADMIN_PROJECT_NAME = 'VatAdmin'
-VAT_ADMIN_DICT_KEY = 'VatAdminDict'
-VAT_ADMIN_CONFIG_KEY = 'VatAdminConfig'
+VAT_ADMIN_PROJECT_NAME = 'vatadmin-naive'
+VAT_ADMIN_DICT_KEY = 'vatadmin-dict'
+VAT_ADMIN_CONFIG_KEY = 'vatadmin-config'
 
 EOF;
         file_put_contents($env, $env_config);

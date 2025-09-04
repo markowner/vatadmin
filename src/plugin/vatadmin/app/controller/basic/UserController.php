@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\basic;
 
@@ -16,6 +17,9 @@ use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
 use Tinywan\Jwt\JwtToken;
 use Webman\Event\Event;
 
+/**
+ * @property \plugin\vatadmin\app\model\admin\AdminUser $model
+ */
 class UserController extends BaseController
 {
     /**

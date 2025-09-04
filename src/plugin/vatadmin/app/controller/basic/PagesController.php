@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\basic;
 
@@ -10,6 +11,9 @@ use support\Container;
 use support\Request;
 use think\facade\Db;
 
+/**
+ * @property \plugin\vatadmin\app\model\Pages $model
+ */
 class PagesController extends BaseController
 {
     public function __construct()
