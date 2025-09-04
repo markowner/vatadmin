@@ -35,7 +35,7 @@ class InstallController extends BaseController
 
         try {
             $data['charset'] = $data['charset'] ?? 'utf8mb4';
-            $data['collate'] = $data['collate'] ?? 'utf8mb4_unicode_ci';
+            $data['collate'] = $data['collate'] ?? 'utf8mb4_general_ci';
             $db = $this->getPdo($data['host'], $data['user'], $data['password'], $data['port'], $data['charset']);
          
             $stmt = $db->query("show databases like '{$data['database']}'");

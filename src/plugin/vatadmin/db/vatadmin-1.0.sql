@@ -435,7 +435,7 @@ CREATE TABLE `vat_admin_user` (
 -- Records of vat_admin_user
 -- ----------------------------
 BEGIN;
-INSERT INTO `vat_admin_user` (`id`, `department_id`, `name`, `username`, `mobile`, `email`, `password`, `avatar`, `roles`, `online_status`, `last_login_time`, `status`, `createtime`, `updatetime`) VALUES (1, '0', '系统管理员', 'admin', '15011309691', '', '$2y$10$SRlQ61ey7D2pBDc1VGg.RubKqX15qflhlMh7.FbAzDPi2vFyt9jOG', 'storage/avatar.jpg', '1', 0, '2025-03-27 18:11:26', 0, '2024-09-06 17:52:55', '2025-03-27 18:11:26');
+INSERT INTO `vat_admin_user` (`id`, `department_id`, `name`, `username`, `mobile`, `email`, `password`, `avatar`, `roles`, `online_status`, `last_login_time`, `status`, `createtime`, `updatetime`) VALUES (1, '0', '系统管理员', 'admin', '15011309691', '', '$2y$10$SRlQ61ey7D2pBDc1VGg.RubKqX15qflhlMh7.FbAzDPi2vFyt9jOG', '', '1', 0, '2025-03-27 18:11:26', 0, '2024-09-06 17:52:55', '2025-03-27 18:11:26');
 COMMIT;
 
 -- ----------------------------
