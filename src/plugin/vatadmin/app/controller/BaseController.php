@@ -18,6 +18,7 @@ use support\Redis;
 use support\Request;
 use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
 use Tinywan\Jwt\JwtToken;
+use Illuminate\Support\Collection;
 
 class BaseController{
 
@@ -352,7 +353,7 @@ class BaseController{
         ob_start();
         //文件名
         $filename = $filename.'.'.$type;
-        (new FastExcel($data))->download($filename, function($row) use ($headings){
+        (new FastExcel(Collection::make($data)))->download($filename, function($row) use ($headings){
             $map = [];
             foreach ($headings as $field => $name){
                 $map[$name] = $row[$field];
