@@ -14,8 +14,24 @@ composer require vat/vatadmin
 ```bash
 php start.php start
 ```
-### 访问后台
+### 后台页面
+
+
 ```
+安装后台管理页面
+
+# 克隆项目
+git clone https://github.com/markowner/vatadmin-naive.git
+
+# 进入项目目录
+cd vatadmin-naive
+
+# yarn安装依赖
+yarn install
+
+# 运行项目
+yarn dev
+
 http://localhost:8787，首次访问会检测是否安装过（检测.env配置文件是否存在），没有配置文件会进入安装页面，引导安装从而生成配置文件及生成数据库，
 安装成功后，点击跳转访问后台页面，默认账号：admin，密码：123456
 ```

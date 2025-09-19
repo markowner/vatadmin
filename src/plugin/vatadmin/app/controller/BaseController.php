@@ -28,6 +28,7 @@ class BaseController{
     public $headings = []; //导出表头
     public $downloadLimit = 5000; //导出限制
     private $properties = [];
+    protected $tableCode = 0; //标识,用于区分多个页面相同的表名
 
     /**
      * 成功返回格式
@@ -386,7 +387,7 @@ class BaseController{
      * @throws \think\db\exception\ModelNotFoundException
      */
     protected function initPage(){
-        $pages = Pages::where('table', $this->model->getTable())->find();
+        $pages = Pages::where('table', $this->model->getTable())->where('table_code', $this->tableCode)->find();
         // 创建一个新数组存储处理后的数据，避免直接修改模型对象
         $pageInfo = $pages ? $pages->toArray() : [];
         $pageInfo['tpl_json'] = $pageInfo['tpl_json'] ? json_decode($pageInfo['tpl_json'], true) : [];

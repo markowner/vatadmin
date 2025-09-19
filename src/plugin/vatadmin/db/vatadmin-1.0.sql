@@ -445,6 +445,7 @@ DROP TABLE IF EXISTS `vat_pages`;
 CREATE TABLE `vat_pages` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID',
   `table` varchar(64) NOT NULL DEFAULT '' COMMENT '表名',
+  `table_code` int NOT NULL DEFAULT '0' COMMENT '表标识,用于区分多个页面相同表名',
   `name` varchar(64) NOT NULL DEFAULT '' COMMENT '名称',
   `build_project` varchar(64) NOT NULL DEFAULT '' COMMENT '项目',
   `build_app_name` varchar(32) NOT NULL DEFAULT '' COMMENT '应用名称',

@@ -11,6 +11,8 @@ use support\Container;
  */
 class {#build_controller_name#}Controller extends BaseController{
 
+    protected $tableCode = {#build_table_code#}; //标识,用于区分多个页面相同的表名
+ 
     public function __construct()
     {
         $this->model = Container::get(\app\model{#build_model_dir#}\{#build_model_name#}::class);
