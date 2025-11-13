@@ -182,7 +182,7 @@ class PagesController extends BaseController
      */
     private function _buildView($page)
     {
-        $basePath = BASE_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . ($page['build_project'] ?:'VatAdmin') . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'views';
+        $basePath = BASE_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . ($page['build_project'] ?:'vatadmin-naive') . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'views';
         $path = $basePath . DIRECTORY_SEPARATOR . trim($page['build_view'], '/');
         if(!is_dir($path)){
             recursiveMkdir($path);

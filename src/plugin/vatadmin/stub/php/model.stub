@@ -1,6 +1,6 @@
 <?php
 
-namespace plugin\vatadmin\app\model{#build_model#};
+namespace app\model{#build_model#};
 
 use think\Model;
 

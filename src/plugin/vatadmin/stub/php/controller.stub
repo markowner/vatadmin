@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace plugin\vatadmin\app\{#build_app_name#}\controller{#build_controller_dir#};
+namespace app\{#build_app_name#}\controller{#build_controller_dir#};
 
 use plugin\vatadmin\app\controller\BaseController;
 use support\Container;
