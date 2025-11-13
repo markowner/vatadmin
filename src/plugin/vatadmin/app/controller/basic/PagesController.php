@@ -311,7 +311,7 @@ class PagesController extends BaseController
             'build_menu_name' => $comment,
             'tpl_system_json' => json_encode($systemTplJson, JSON_UNESCAPED_UNICODE)
         ];
-        $pages = Pages::where('table', $table)->order('code', 'desc')->find();
+        $pages = Pages::where('table', $table)->order('table_code', 'desc')->find();
         $data['table_code'] = $pages ? $pages->table_code + 1 : 0;
         $data['tpl_json'] = $data['tpl_system_json'];
         $result = Pages::create($data);
