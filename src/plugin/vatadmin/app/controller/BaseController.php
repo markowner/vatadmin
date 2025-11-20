@@ -97,7 +97,11 @@ class BaseController{
                 $row[$field] !== '' && $row[$field] !== null && $row[$field.'_desc'] = $dict[$row[$field]];
             }
         }
-        method_exists($calledClass, 'buildTree') && $this->buildTree($rows);
+        if(method_exists($calledClass, 'buildTree')){
+            $this->buildTree($rows);
+        }else{
+            $rows = tree($rows, 0);
+        }
         return $this->ok('success', ['list' => $rows, 'total' => count($rows)]);
     }
 

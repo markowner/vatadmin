@@ -42,25 +42,100 @@ class User{
         AdminLogOperation::create($data);
     }
 
-    protected function getIpLocation($ip) {
-        $ip2region = new \Ip2Region();
-        try {
-            $region = $ip2region->memorySearch($ip);
-        } catch (\Exception $e) {
-            return '未知';
-        }
-        list($country, $number, $province, $city, $network) = explode('|', $region['region']);
-        if ($network === '内网IP') {
-            return $network;
-        }
-        if ($country === '中国') {
-            return $province.'-'.$city.':'.$network;
-        }
-        if ($country == '0') {
+    protected function getIpLocation($ip)
+    {
+        // IP地址验证
+        if (empty($ip) || !filter_var($ip, FILTER_VALIDATE_IP)) {
             return '未知';
         }
 
+        $ip2region = new \Ip2Region();
+        try {
+            $searchResult = $ip2region->memorySearch($ip);          
+            if (empty($searchResult['region'])) {
+                return '未知';
+            }
+            
+            return $this->parseLocationInfo($searchResult['region']);
+            
+        } catch (\Exception $e) {
+            // 可以在这里记录日志
+            return '未知';
+        }
+    }
+
+    /**
+     * 解析地理位置信息
+     */
+    protected function parseLocationInfo($regionInfo)
+    {
+        $components = explode('|', $regionInfo);
+        $components = array_pad($components, 5, '');
+        
+        [
+            $country, 
+            $areaCode, 
+            $province, 
+            $city, 
+            $isp
+        ] = $components;
+        
+        // 处理特殊类型IP
+        if ($this->isInternalIp($isp, $country)) {
+            return '内网IP';
+        }
+        
+        if ($this->isUnknownLocation($country)) {
+            return '未知';
+        }
+        
+        // 中国地区格式化
+        if ($country === '中国') {
+            return $this->formatChineseLocation($province, $city, $isp);
+        }
+        
+        // 其他国家
         return $country;
+    }
+
+    /**
+     * 判断是否为内网IP
+     */
+    protected function isInternalIp($isp, $country)
+    {
+        return $isp === '内网IP' || $country === '内网IP';
+    }
+
+    /**
+     * 判断是否为未知位置
+     */
+    protected function isUnknownLocation($country)
+    {
+        return $country === '0' || empty($country);
+    }
+
+    /**
+     * 格式化中国地区信息
+     */
+    protected function formatChineseLocation($province, $city, $isp)
+    {
+        $locationParts = [];
+        
+        if ($province && $province !== '0') {
+            $locationParts[] = $province;
+        }
+        if ($city && $city !== '0' && $city !== $province) { // 避免重复
+            $locationParts[] = $city;
+        }
+        
+        $location = empty($locationParts) ? '中国' : implode('-', $locationParts);
+        
+        // 添加运营商信息
+        if ($isp && $isp !== '0') {
+            $location .= ':' . $isp;
+        }
+        
+        return $location;
     }
 
     protected function getBrowser($user_agent): string

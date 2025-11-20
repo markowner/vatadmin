@@ -367,7 +367,7 @@ class PagesController extends BaseController
         ];
    
         $tplJson = $pages->tpl_json ? Util::mergeJson($systemTplJson, json_decode($pages->tpl_json, true)) : $systemTplJson;
-        $result = $pages->update([
+        $result = $pages->save([
             'name' => $comment,
             'tpl_system_json' => $data['tpl_system_json'],
             'tpl_json' => json_encode($tplJson, JSON_UNESCAPED_UNICODE)
