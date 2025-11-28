@@ -83,6 +83,23 @@ function tree($data, $parent_id = 0, $field = 'id')
     return $tree;
 }
 
+function treeSimple($data, $parent_id = 0, $field = 'id')
+{
+    $tree = array();
+    foreach ($data as $item) {
+        if ($item['parent_id'] == $parent_id) {
+            $children = treeSimple($data, $item[$field]);
+            $tree[] = [
+                'value'         => $item[$field],
+                'key'           => $item[$field],
+                'label'         => $item['name'],
+                'parent_id'     => $item['parent_id'],
+                'children'      => $children ? : null,
+            ];
+        }
+    }
+    return $tree;
+}
 
 function VatUid(){
     return \Tinywan\Jwt\JwtToken::getCurrentId();

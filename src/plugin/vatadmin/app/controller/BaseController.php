@@ -19,6 +19,7 @@ use support\Request;
 use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
 use Tinywan\Jwt\JwtToken;
 use Illuminate\Support\Collection;
+use plugin\vatadmin\service\tools\Enum;
 
 class BaseController{
 
@@ -176,6 +177,16 @@ class BaseController{
                 $where['admin_id'] = ['in', $userIds];
             }
         }
+    }
+
+    /**
+     * tree 级联结构数据
+     * @param Request $request
+     */
+    public function tree(Request $request){
+        $list = $this->model::where('status', Enum::STATUS_OK)->select();
+        $list = treeSimple($list, 0);
+        return $this->ok('success', ['list' => $list]);
     }
 
     /**
