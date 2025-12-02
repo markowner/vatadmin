@@ -46,7 +46,8 @@ class AdminConfig extends Model
      */
     public static function getConfigs()
     {
-        return self::where('status', Enum::STATUS_OK)->where('open_front', 1)->column('value', 'code');
+        $result = self::where('status', Enum::STATUS_OK)->where('open_front', 1)->select();
+        return array_column($result->toArray(), 'value', 'code');
     }
 
     /**
@@ -77,4 +78,10 @@ class AdminConfig extends Model
         return isset($items[$code]) ? $items[$code] : '';
     }
 
+    public function getValueAttr($value, $options){
+        if($options['view'] === 'upload'){
+            return cdnUrl($value);
+        }
+        return $value;
+    }
 }
