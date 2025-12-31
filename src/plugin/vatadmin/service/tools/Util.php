@@ -11,6 +11,9 @@ class Util{
      */
     public static function isMobile($mobile)
     {
+        if(empty($mobile)){
+            return false;
+        }
         $search = '/^1[3|4|5|6|7|8|9][0-9]\d{8}$/';
         if ( preg_match( $search, $mobile ) ) {
             return true ;
@@ -24,6 +27,9 @@ class Util{
      * @return bool
      */
     public static function isPhone( $phone ) {
+        if(empty($phone)){
+            return false;
+        }
         $search = '/^(\d{3,4}|\d{3,4}-|\s)?\d{6,8}$/';
         if ( preg_match( $search, $phone ) ) {
             return true ;
@@ -33,6 +39,9 @@ class Util{
 
     //验证身份证是否有效
     static function validateIDCard($IDCard) {
+        if(empty($IDCard)){
+            return false;
+        }
         if (strlen($IDCard) == 18) {
             return self::check18IDCard($IDCard);
         }
@@ -108,6 +117,9 @@ class Util{
      * 密码格式：同时且只能包含大写字母、小写字母、数字，并且检测字符长度
      */
     public static function checkPassword($password){
+        if(empty($password)){
+            return false;
+        }
         $reg = "/(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])[A-Za-z0-9]{8,20}/";
         if ( preg_match( $reg, $password ) ) {
             return true ;
@@ -119,6 +131,9 @@ class Util{
      * 检测账号
      */
     public static function isValidUsername($username) {
+        if(empty($username)){
+            return false;
+        }
         // 定义合法字符集，这里包括字母（大小写）、数字和下划线
         $pattern = '/^[a-zA-Z0-9_]{5,20}$/';
 

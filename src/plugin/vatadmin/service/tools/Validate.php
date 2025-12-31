@@ -57,14 +57,14 @@ class Validate {
         foreach ($rule as $k => $v){
             if(is_int($k)){
                 //过滤没有设置的,规则错误的
-                if(!isset($data[$v])) continue;
+                // if(!isset($data[$v])) continue;
                 $rs = self::checkRequired($data[$v]);
                 if(!$rs) {
                     throw new BadRequestHttpException('参数错误');
                 }
             }else{
                 //过滤没有设置的,规则错误的
-                if(!isset($data[$k])) continue;
+                // if(!isset($data[$k])) continue;
                 if(is_string($v)){//自定义提示消息
                     //默认类型
                     $rs = self::checkRequired($data[$k]);
@@ -164,7 +164,7 @@ class Validate {
      * @return bool
      */
     static function checkRequired($value, $rule=[]){
-        return $value !== '';
+        return !is_null($value) && $value !== '' && !empty($value);
     }
 
     /**
@@ -226,6 +226,9 @@ class Validate {
      * @return bool
      */
     static function checkEmail($value, $rule=[]){
+        if(empty($value)){
+            return false;
+        }
         if(filter_var($value, FILTER_VALIDATE_EMAIL)){
             return true;
         }
@@ -239,6 +242,9 @@ class Validate {
      * @return bool
      */
     static function checkUrl($value, $rule=[]){
+        if(empty($value)){
+            return false;
+        }
         if(filter_var($value, FILTER_VALIDATE_URL)){
             return true;
         }
@@ -252,6 +258,9 @@ class Validate {
      * @return bool
      */
     static function checkMonth($value, $rule=[]){
+        if(empty($value)){
+            return false;
+        }
         $patten = "/^\d{4}[\-](0?[1-9]|1[012])$/";
         if (preg_match($patten, $value)) {
             return true;
@@ -266,6 +275,9 @@ class Validate {
      * @return bool
      */
     static function checkDate($value, $rule=[]){
+        if(empty($value)){
+            return false;
+        }
         $patten = "/^\d{4}[\-](0?[1-9]|1[012])[\-](0?[1-9]|[12][0-9]|3[01])$/";
         if (preg_match($patten, $value)) {
             return true;
@@ -280,6 +292,9 @@ class Validate {
      * @return bool
      */
     static function checkDatetime($value, $rule=[]){
+        if(empty($value)){
+            return false;
+        }
         $patten = "/^\d{4}[\-](0?[1-9]|1[012])[\-](0?[1-9]|[12][0-9]|3[01])(\s+(0?[0-9]|1[0-9]|2[0-3])\:(0?[0-9]|[1-5][0-9])\:(0?[0-9]|[1-5][0-9]))+$/";
         if (preg_match($patten, $value)) {
             return true;
