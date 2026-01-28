@@ -431,7 +431,7 @@ class PagesController extends BaseController
             $config['form'] = false;
             $config['form_required'] = false;
             $config['rules'] = '';
-            $config['width'] = 60;
+            $config['width'] = 80;
         }
 
         if (preg_match('/^(name|title)|(name|title)$/', $field['name'])) {

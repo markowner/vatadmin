@@ -12,9 +12,16 @@ return [
                 ],
                 'formatter' => [
                     'class' => Monolog\Formatter\LineFormatter::class,
-                    'constructor' => [null, 'Y-m-d H:i:s', true],
+                    'constructor' => [
+                        "[%datetime%] %channel%.%level_name%: [trace_id:%extra.trace_id%] %message% %context%\n",
+                        'Y-m-d H:i:s',
+                        true,
+                    ],
                 ],
-            ]
+            ],
+            'processors' => [
+                plugin\vatadmin\app\processor\TraceIdProcessor::class,
+            ],
         ],
     ],
 ];

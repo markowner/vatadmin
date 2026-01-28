@@ -10,7 +10,8 @@ class Install
      * @var array
      */
     protected static $pathRelation = [
-        'plugin/vatadmin' => 'plugin/vatadmin'
+        'plugin/vatadmin' => 'plugin/vatadmin',
+        'plugin/vatadmin/config/vat' => 'config/plugin/vat',
     ];
 
     /**

@@ -70,12 +70,16 @@ function cdnUrl($url) {
     return $cdnUrl . '/' . ltrim($url, '/');
 }
 
-function tree($data, $parent_id = 0, $field = 'id')
+function tree($data, $parent_id = 0, $field = 'id|parent_id')
 {
     $tree = array();
+    $fields = explode('|', $field);
+    if(count($fields) != 2){
+        $fields[1] = 'parent_id';
+    }
     foreach ($data as $item) {
-        if ($item['parent_id'] == $parent_id) {
-            $children = tree($data, $item[$field]);
+        if ($item[$fields[1]] == $parent_id) {
+            $children = tree($data, $item[$fields[0]], $field);
             $item['children'] = $children ? : null;
             $tree[] = $item;
         }
@@ -83,17 +87,21 @@ function tree($data, $parent_id = 0, $field = 'id')
     return $tree;
 }
 
-function treeSimple($data, $parent_id = 0, $field = 'id')
+function treeSimple($data, $parent_id = 0, $field = 'id|parent_id')
 {
     $tree = array();
+    $fields = explode('|', $field);
+    if(count($fields) != 2){
+        $fields[1] = 'parent_id';
+    }
     foreach ($data as $item) {
-        if ($item['parent_id'] == $parent_id) {
-            $children = treeSimple($data, $item[$field]);
+        if ($item[$fields[1]] == $parent_id) {
+            $children = treeSimple($data, $item[$fields[0]], $field);
             $tree[] = [
-                'value'         => $item[$field],
-                'key'           => $item[$field],
+                'value'         => $item[$fields[0]],
+                'key'           => $item[$fields[0]],
                 'label'         => $item['name'],
-                'parent_id'     => $item['parent_id'],
+                'parent_id'     => $item[$fields[1]],
                 'children'      => $children ? : null,
             ];
         }

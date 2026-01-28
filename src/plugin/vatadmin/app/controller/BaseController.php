@@ -30,6 +30,7 @@ class BaseController{
     public $downloadLimit = 5000; //导出限制
     private $properties = [];
     protected $tableCode = 0; //标识,用于区分多个页面相同的表名
+    protected $treeField = 'id|parent_id'; //tree字段，格式：id|parent_id
 
     /**
      * 成功返回格式
@@ -67,6 +68,7 @@ class BaseController{
         $this->injectConfineData($where);
         method_exists($calledClass, 'injectWhere') && $this->injectWhere($where);
         $params = $curd->buildParams($curd->buildWhere($where));
+        method_exists($calledClass, 'injectSelectParams') && $this->injectSelectParams($params);
         $rows = $curd->select($params);
 //        $rows = $curd->select($curd->filterConditionWhere($filter, $this->buildCondition()));
         $fieldDict = $this->buildDict();
@@ -101,7 +103,7 @@ class BaseController{
         if(method_exists($calledClass, 'buildTree')){
             $this->buildTree($rows);
         }else{
-            $rows = tree($rows, 0);
+            $rows = tree($rows, 0, $this->treeField);
         }
         return $this->ok('success', ['list' => $rows, 'total' => count($rows)]);
     }
@@ -119,6 +121,7 @@ class BaseController{
         $calledClass = get_called_class();
         method_exists($calledClass, 'injectOwner') && $this->injectOwner($where);
         $params = $curd->buildParams($curd->buildWhere($where));
+        method_exists($calledClass, 'injectSelectParams') && $this->injectSelectParams($params);
         $rows = $curd->select($params);
         $fieldDict = $this->buildDict();
         method_exists($calledClass, 'injectMap') && $this->injectMap();
@@ -185,7 +188,7 @@ class BaseController{
      */
     public function tree(Request $request){
         $list = $this->model::where('status', Enum::STATUS_OK)->select();
-        $list = treeSimple($list, 0);
+        $list = treeSimple($list, 0, $this->treeField);
         return $this->ok('success', ['list' => $list]);
     }
 
@@ -218,7 +221,9 @@ class BaseController{
     public function edit(Request $request){
         $data = $request->post();
         $this->initPage();
-        $this->validate($this->buildValidate());
+        if(!isset($this->pageInfo['tpl_json']['setting']['edit_validate']) || $this->pageInfo['tpl_json']['setting']['edit_validate']){
+            $this->validate($this->buildValidate());
+        }
         //操作数据前
         $calledClass = get_called_class();
         method_exists($calledClass, 'before') && $this->before('edit', $data);

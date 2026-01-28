@@ -16,12 +16,6 @@ class AuthCheck implements MiddlewareInterface
 
     public function process(Request $request, callable $next) : Response
     {
-
-        // Db::listen(function($sql, $runtime, $master) {
-        //      // 进行监听处理
-        //      var_dump($sql);
-        // });
-         
         if($request->controller){
             $controller = new \ReflectionClass($request->controller);
             $noNeedLogin = $controller->getDefaultProperties()['noNeedLogin'] ?? [];
@@ -38,7 +32,6 @@ class AuthCheck implements MiddlewareInterface
                 //记录操作日志
                 Event::emit('user.operation', ['admin_id' => $adminId, 'message' => '', 'route' => $request->path(), 'method' => $request->method(), 'params' => $request->all()]);
             }
-
          }
 
         return $next($request);
