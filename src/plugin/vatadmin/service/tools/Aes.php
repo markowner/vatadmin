@@ -4,11 +4,11 @@ namespace plugin\vatadmin\service\tools;
 
 class Aes{
 
-    private $key = config('plugin.vat.vatadmin.app.aes.key', 'Vat-Admin');
+    private $key = 'Vat-Admin';
 
-    private $iv = config('plugin.vat.vatadmin.app.aes.iv', '');
+    private $iv = '';
 
-    public $method = config('plugin.vat.vatadmin.app.aes.cipher_algo', 'AES-128-CBC');
+    public $method = 'AES-128-CBC';
 
     private $options = 0;
 
@@ -16,6 +16,10 @@ class Aes{
 
     public function __construct($config)
     {
+        $this->key = config('plugin.vat.vatadmin.app.aes.key', 'Vat-Admin');
+        $this->iv = config('plugin.vat.vatadmin.app.aes.iv', '');
+        $this->method = config('plugin.vat.vatadmin.app.aes.cipher_algo', 'AES-128-CBC');
+
         foreach($config as $k => $v){
             $this->$k = $v;
         }
