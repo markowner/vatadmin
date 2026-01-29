@@ -15,10 +15,20 @@ class SqlListen implements MiddlewareInterface
 
     public function process(Request $request, callable $next) : Response
     {
-        $debug = config('plugin.vat.vatadmin.app.debug', false);
+        $debug = config('plugin.vat.vatadmin.app.sql.log', false);
+        $displayType = config('plugin.vat.vatadmin.app.sql.display_type', 10);
         if($debug && !self::$isListened){
-            Db::listen(function($sql, $runtime, $master) {
-                 Log::info($sql, ['runtime' => $runtime, 'master' => $master]);   
+            Db::listen(function($sql, $runtime) use($displayType){
+                if($displayType == 10){
+                    Log::info($sql, ['runtime' => $runtime]);   
+                }elseif($displayType == 20){
+                    echo $sql . PHP_EOL;
+                }elseif($displayType == 100){
+                    $callback = config('plugin.vat.vatadmin.app.sql.callback');
+                    if(is_callable($callback)){
+                        $callback($sql, $runtime);
+                    }
+                }
             });
             self::$isListened = true;
         }

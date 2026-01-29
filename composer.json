@@ -26,6 +26,7 @@
         "zoujingli/ip2region": "^2.0",
         "kkokk/poster": "^2.3",
         "yzh52521/webman-task": "^1.48",
-        "vlucas/phpdotenv": "^5.6"
+        "vlucas/phpdotenv": "^5.6",
+        "vat/validate": "^1.0"
     }
 }

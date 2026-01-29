@@ -11,7 +11,6 @@ use plugin\vatadmin\app\model\Pages;
 use plugin\vatadmin\service\tools\Curd;
 use Rap2hpoutre\FastExcel\FastExcel;
 use plugin\vatadmin\service\internal\task\TaskClient;
-use plugin\vatadmin\service\tools\Validate;
 use Shopwwi\WebmanFilesystem\Facade\Storage;
 use support\Log;
 use support\Redis;
@@ -20,6 +19,7 @@ use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
 use Tinywan\Jwt\JwtToken;
 use Illuminate\Support\Collection;
 use plugin\vatadmin\service\tools\Enum;
+use Vat\Validate;
 
 class BaseController{
 
@@ -486,7 +486,8 @@ class BaseController{
      * 验证数据
      */
     public function validate($rules){
-        Validate::check($rules);
+        Validate::setErrorHandler(BadRequestHttpException::class);
+        Validate::check(request()->all(),$rules);
     }    
 
 

@@ -9,12 +9,12 @@ use plugin\vatadmin\app\model\admin\AdminConfig;
 use plugin\vatadmin\app\model\admin\AdminDict;
 use plugin\vatadmin\app\model\admin\AdminNotice;
 use plugin\vatadmin\service\tools\Aes;
-use plugin\vatadmin\service\tools\Validate;
 use support\Container;
 use support\Redis;
 use support\Request;
 use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
 use Tinywan\Jwt\JwtToken;
+use Vat\Validate;
 use Webman\Event\Event;
 
 /**
@@ -124,7 +124,8 @@ class UserController extends BaseController
      * @param Request $request
      */
     public function editInfo(Request $request){
-        $data = Validate::check([
+        Validate::setErrorHandler(BadRequestHttpException::class);
+        $data = Validate::check($request->all(),[
             'name' => ['required' => '请输入名称'],
             'mobile' => '',
             'email' => '',

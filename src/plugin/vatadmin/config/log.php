@@ -18,10 +18,12 @@ return [
                         true,
                     ],
                 ],
-            ],
-            'processors' => [
-                plugin\vatadmin\app\processor\TraceIdProcessor::class,
-            ],
+            ]
+        ],
+        'processors' => [
+            [
+                'class' => plugin\vatadmin\app\processor\TraceIdProcessor::class,
+            ]
         ],
     ],
 ];
