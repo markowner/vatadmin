@@ -21,6 +21,7 @@ class Install
      */
     public static function install()
     {
+        self::uninstall();
         static::installByRelation();
     }
 
