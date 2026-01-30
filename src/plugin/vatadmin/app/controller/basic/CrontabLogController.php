@@ -15,11 +15,5 @@ class CrontabLogController extends BaseController{
     {
         $this->model = Container::get(\plugin\vatadmin\app\model\admin\CrontabLog::class);
     }
-
-    public function injectAttr(&$row)
-    {
-        $row['create_time'] = date('Y-m-d H:i:s', $row['create_time']);
-        $row['update_time'] = date('Y-m-d H:i:s', $row['update_time']);
-    }
 }
 

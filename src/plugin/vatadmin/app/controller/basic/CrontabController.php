@@ -7,6 +7,7 @@ use plugin\vatadmin\app\controller\BaseController;
 use support\Container;
 use support\Log;
 use support\Request;
+use Vatcron\Client;
 
 /**
  * @property \plugin\vatadmin\app\model\admin\Crontab $model
@@ -18,13 +19,6 @@ class CrontabController extends BaseController{
         $this->model = Container::get(\plugin\vatadmin\app\model\admin\Crontab::class);
     }
 
-    public function injectAttr(&$row)
-    {
-        $row['create_time'] = date('Y-m-d H:i:s', $row['create_time']);
-        $row['update_time'] = date('Y-m-d H:i:s', $row['update_time']);
-        $row['last_running_time'] = date('Y-m-d H:i:s', $row['last_running_time']);
-    }
-
     /**
      * 定时任务添加编辑
      * @param Request $request
@@ -33,11 +27,11 @@ class CrontabController extends BaseController{
     public function edit(Request $request){
         $data = $request->post();
         $param = [
-            'method' => $data['id'] ? 'crontabUpdate' : 'crontabCreate',
+            'method' => $data['id'] ? 'updateTask' : 'createTask',
             'args'   => $data
         ];
 
-        $result  = \yzh52521\Task\Client::instance()->request($param);
+        $result  = Client::instance()->request($param);
         Log::info('定时任务添加编辑更新结果：', ['res' => $result]);
         if($result->code === 200){
             return $this->ok('操作成功');
@@ -45,26 +39,6 @@ class CrontabController extends BaseController{
         return $this->error('操作失败');
     }
 
-
-    /**
-     * 删除
-     * @param Request $request
-     */
-    public function delete(Request $request){
-        $ids = $request->post("ids");
-        $ids = is_array($ids) ? implode(',', $ids) : $ids;
-        $param = [
-            'method' => 'crontabDelete',
-            'args'   => [
-                'id' => $ids
-            ]
-        ];
-        $result  = \yzh52521\Task\Client::instance()->request($param);
-        if($result->code === 200){
-            return $this->ok('操作成功');
-        }
-        return $this->error('操作失败');
-    }
 
     /**
      * 任务重启
@@ -75,12 +49,12 @@ class CrontabController extends BaseController{
         $ids = $request->post("ids");
         $ids = is_array($ids) ? implode(',', $ids) : $ids;
         $param = [
-            'method' => 'crontabReload',
+            'method' => 'reloadTask',
             'args'   => [
                 'id' => $ids
             ]
         ];
-        $result  = \yzh52521\Task\Client::instance()->request($param);
+        $result  = Client::instance()->request($param);
         if($result->code === 200){
             return $this->ok('操作成功');
         }
@@ -100,15 +74,14 @@ class CrontabController extends BaseController{
         }
 
         $param = [
-            'method' => 'crontabUpdate',
+            'method' => $status == '0' ? 'startTask' : 'closeTask',
             'args'   => [
-                'id'        => $ids,
-                'status'    => $status,
+                'id' => $ids,
             ]
         ];
 
-        $result  = \yzh52521\Task\Client::instance()->request($param);
-        Log::info('定时任务添加编辑更新状态结果：', ['res' => $result]);
+        $result  = Client::instance()->request($param);
+        Log::info('定时任务更新状态结果：', ['res' => $result]);
         if($result->code === 200){
             return $this->ok('操作成功');
         }

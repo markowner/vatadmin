@@ -38,7 +38,7 @@ INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view
 INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view`, `view_option_json`, `sortrank`, `open_front`, `status`) VALUES (9, 1, '百度统计', 'baidu_stat', '', 'textarea', '', 0, 1, 0);
 INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view`, `view_option_json`, `sortrank`, `open_front`, `status`) VALUES (10, 1, '公司地址', 'address', '', 'textarea', '', 0, 1, 0);
 INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view`, `view_option_json`, `sortrank`, `open_front`, `status`) VALUES (11, 1, '联系电话', 'phone', '', 'input', '', 0, 1, 0);
-INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view`, `view_option_json`, `sortrank`, `open_front`, `status`) VALUES (12, 1, '邮箱', 'email', '', 'input', '', 0, 1, 0);
+INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view`, `view_option_json`, `sortrank`, `open_front`, `status`) VALUES (12, 1, '联系邮箱', 'email', '', 'input', '', 0, 1, 0);
 INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view`, `view_option_json`, `sortrank`, `open_front`, `status`) VALUES (13, 1, '营业时间', 'business_hours', '', 'input', '', 0, 1, 0);
 INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view`, `view_option_json`, `sortrank`, `open_front`, `status`) VALUES (14, 1, '底部标题', 'footer_title', '', 'input', '', 0, 1, 0);
 INSERT INTO `vat_admin_config` (`id`, `group_id`, `name`, `code`, `value`, `view`, `view_option_json`, `sortrank`, `open_front`, `status`) VALUES (15, 1, '底部描述', 'footer_description', '', 'textarea', '', 0, 1, 0);
@@ -68,52 +68,6 @@ BEGIN;
 INSERT INTO `vat_admin_config_group` (`id`, `name`, `code`, `status`) VALUES (1, '站点配置', 'website', 0);
 INSERT INTO `vat_admin_config_group` (`id`, `name`, `code`, `status`) VALUES (2, '上传配置', 'upload', 0);
 COMMIT;
-
--- ----------------------------
--- Table structure for vat_admin_crontab
--- ----------------------------
-DROP TABLE IF EXISTS `vat_admin_crontab`;
-CREATE TABLE `vat_admin_crontab` (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `title` varchar(100) NOT NULL COMMENT '任务标题',
-  `type` tinyint(1) NOT NULL DEFAULT '1' COMMENT '任务类型 (1 command, 2 class, 3 url, 4 eval)',
-  `rule` varchar(100) NOT NULL COMMENT '任务执行表达式',
-  `target` varchar(150) NOT NULL DEFAULT '' COMMENT '调用任务字符串',
-  `parameter` varchar(500) DEFAULT NULL COMMENT '任务调用参数',
-  `running_times` int NOT NULL DEFAULT '0' COMMENT '已运行次数',
-  `last_running_time` int NOT NULL DEFAULT '0' COMMENT '上次运行时间',
-  `remark` varchar(255) NOT NULL COMMENT '备注',
-  `sort` int NOT NULL DEFAULT '0' COMMENT '排序，越大越前',
-  `status` tinyint NOT NULL DEFAULT '0' COMMENT '任务状态状态[0:禁用;1启用]',
-  `create_time` int NOT NULL DEFAULT '0' COMMENT '创建时间',
-  `update_time` int NOT NULL DEFAULT '0' COMMENT '更新时间',
-  `singleton` tinyint(1) NOT NULL DEFAULT '1' COMMENT '是否单次执行 (0 是 1 不是)',
-  PRIMARY KEY (`id`) USING BTREE,
-  KEY `title` (`title`) USING BTREE,
-  KEY `create_time` (`create_time`) USING BTREE,
-  KEY `status` (`status`) USING BTREE,
-  KEY `type` (`type`) USING BTREE
-) ENGINE=InnoDB COMMENT='定时器任务表';
-
-
--- ----------------------------
--- Table structure for vat_admin_crontab_log
--- ----------------------------
-DROP TABLE IF EXISTS `vat_admin_crontab_log`;
-CREATE TABLE `vat_admin_crontab_log` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `crontab_id` bigint unsigned NOT NULL COMMENT '任务id',
-  `target` varchar(255) NOT NULL COMMENT '任务调用目标字符串',
-  `parameter` varchar(500) DEFAULT NULL COMMENT '任务调用参数',
-  `exception` text COMMENT '任务执行或者异常信息输出',
-  `return_code` tinyint(1) NOT NULL DEFAULT '0' COMMENT '执行返回状态[0成功; 1失败]',
-  `running_time` varchar(10) NOT NULL COMMENT '执行所用时间',
-  `create_time` int NOT NULL DEFAULT '0' COMMENT '创建时间',
-  `update_time` int NOT NULL DEFAULT '0' COMMENT '更新时间',
-  PRIMARY KEY (`id`) USING BTREE,
-  KEY `create_time` (`create_time`) USING BTREE,
-  KEY `crontab_id` (`crontab_id`) USING BTREE
-) ENGINE=InnoDB COMMENT='定时器任务执行日志表';
 
 -- ----------------------------
 -- Table structure for vat_admin_department
@@ -507,5 +461,45 @@ CREATE TABLE `vat_upload_log` (
   `updatetime` datetime NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB COMMENT='导入日志表';
+
+-- 创建vat_cron表（任务表）
+DROP TABLE IF EXISTS `vat_crontab`;
+CREATE TABLE `vat_crontab` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '任务ID',
+  `name` varchar(100) NOT NULL COMMENT '任务名称',
+  `description` text COMMENT '任务描述',
+  `cron_expression` varchar(50) NOT NULL COMMENT 'Cron表达式',
+  `command` text NOT NULL COMMENT '执行命令',
+  `params` text COMMENT '参数（JSON格式）',
+  `task_type` tinyint(1) DEFAULT 1 COMMENT '任务类型：1 command, 2 class, 3 url, 4 eval, 5 shell',
+  `execution_mode` tinyint(1) DEFAULT 0 COMMENT '执行模式：0自动（优先协程）, 1协程, 2进程',
+  `timeout` int(11) DEFAULT 300 COMMENT '任务超时时间（秒）',
+  `lock_time` int(11) DEFAULT 300 COMMENT '任务锁时间（秒）',
+  `last_run_time` datetime DEFAULT NULL COMMENT '上次执行时间',
+  `next_run_time` datetime DEFAULT NULL COMMENT '下次执行时间',
+  `status` tinyint(1) DEFAULT 0 COMMENT '状态',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB COMMENT='定时任务表';
+
+-- 创建vat_crontab_log表（任务执行日志表）
+DROP TABLE IF EXISTS `vat_crontab_log`;
+CREATE TABLE `vat_crontab_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `cron_id` int(11) NOT NULL COMMENT '任务ID',
+  `task_name` varchar(100) NOT NULL COMMENT '任务名称',
+  `status` enum('running','success','failed') NOT NULL DEFAULT 'running' COMMENT '执行状态',
+  `output` text COMMENT '执行输出',
+  `error` text COMMENT '错误信息',
+  `start_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '开始执行时间',
+  `end_time` datetime DEFAULT NULL COMMENT '结束执行时间',
+  `duration` int(11) DEFAULT NULL COMMENT '执行时长（秒）',
+  `pid` int(11) DEFAULT NULL COMMENT '进程ID',
+  `retry_count` int(11) DEFAULT 0 COMMENT '重试次数',
+  PRIMARY KEY (`id`),
+  KEY `idx_cron_id` (`cron_id`),
+  KEY `idx_start_time` (`start_time`)
+) ENGINE=InnoDB COMMENT='定时任务日志表';
 
 SET FOREIGN_KEY_CHECKS = 1;
