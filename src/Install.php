@@ -11,7 +11,7 @@ class Install
      */
     protected static $pathRelation = [
         'plugin/vatadmin' => 'plugin/vatadmin',
-        'plugin/vatadmin/config/vat' => 'config/plugin/vat',
+        'plugin/vatadmin/config/vat/vatadmin' => 'config/plugin/vat/vatadmin',
         'plugin/vatadmin/config/log.php' => 'config/log.php',
     ];
 
