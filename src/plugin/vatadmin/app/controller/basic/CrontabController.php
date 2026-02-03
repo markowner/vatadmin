@@ -46,7 +46,7 @@ class CrontabController extends BaseController{
      * @return \support\Response
      */
     public function reload(Request $request){
-        $ids = $request->post("ids");
+        $ids = $request->input("ids");
         $ids = is_array($ids) ? implode(',', $ids) : $ids;
         $param = [
             'method' => 'reloadTask',
