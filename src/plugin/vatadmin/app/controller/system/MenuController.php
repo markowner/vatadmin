@@ -42,7 +42,7 @@ class MenuController extends BaseController{
         }
     }
 
-    public function after($type, $ids, $model){
+    public function after($type, $ids, $model = null){
         if($type == 'delete'){
             //删除角色菜单关联数据
             AdminRoleMenu::whereIn('menu_id', $ids)->delete();

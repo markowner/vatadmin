@@ -34,7 +34,7 @@ class UserController extends BaseController
         }
     }
 
-    public function before($type, &$data, $model){
+    public function before($type, &$data, $model = null){
         if($type === 'edit'){
             if(!$data['id']){
                 $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);

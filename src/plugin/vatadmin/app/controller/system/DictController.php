@@ -22,7 +22,7 @@ class DictController extends BaseController{
         $row['value'] = $row['value'] ? json_decode($row['value'], true) : [];
     }
 
-    public function before($type, &$data)
+    public function before($type, &$data, $model = null)
     {
         if($type === 'edit' && is_array($data['value'])){
             foreach ($data['value'] as $k => &$v) {
