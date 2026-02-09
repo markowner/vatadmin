@@ -7,6 +7,8 @@ use plugin\vatadmin\app\model\admin\AdminDepartment;
 use plugin\vatadmin\app\model\admin\AdminRole;
 use plugin\vatadmin\app\controller\BaseController;
 use support\Container;
+use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
+use Tinywan\ExceptionHandler\Exception\ServerErrorHttpException;
 
 /**
  * @property \plugin\vatadmin\app\model\admin\AdminUser $model
@@ -32,7 +34,7 @@ class UserController extends BaseController
         }
     }
 
-    public function before($type, &$data){
+    public function before($type, &$data, $model){
         if($type === 'edit'){
             if(!$data['id']){
                 $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
@@ -44,7 +46,12 @@ class UserController extends BaseController
                 }
             }
             $data['roles'] = implode(',', $data['roles']);
+        }else if($type === 'delete'){
+            if(in_array(1, $data)){
+                throw new ServerErrorHttpException('默认用户不能删除');
+            }
         }
+    
     }
 
 }

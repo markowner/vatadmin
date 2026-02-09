@@ -50,4 +50,12 @@ class DepartmentController extends BaseController
 //        }
 //    }
 
+    public function before($type, &$ids, &$model){
+        if($type === 'delete'){
+            //获取当前id及所有子集及子孙级id
+            $ids = treeChildIds($ids, $this->model);
+            $model = $model->whereIn('id', $ids);
+        }
+    }
+
 }

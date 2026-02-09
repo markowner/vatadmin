@@ -257,10 +257,10 @@ class BaseController{
         }
         $calledClass = get_called_class();
         $model = $this->model->whereIn('id', $ids);
-        method_exists($calledClass, 'before') && $this->before('delete', $model);
+        method_exists($calledClass, 'before') && $this->before('delete', $ids, $model);
         $rs = $model->delete();
         if($rs){
-            method_exists($calledClass, 'after') && $this->before('delete', $model);
+            method_exists($calledClass, 'after') && $this->after('delete', $ids, $model);
             return $this->ok('删除成功');
         }
         return $this->error('删除失败');

@@ -109,6 +109,27 @@ function treeSimple($data, $parent_id = 0, $field = 'id|parent_id')
     return $tree;
 }
 
+/**
+ * 递归获取所有包含子孙集ID集合
+ * @param mixed $ids
+ * @param mixed $model
+ * @param mixed $parentField
+ */
+function treeChildIds($ids, $model, $parentField = 'parent_id'){
+    $allIds = $ids;
+    foreach ($ids as $id) {
+        // 查询所有直接子菜单
+        $childIds = $model->where($parentField, $id)->column('id');
+        if (!empty($childIds)) {
+            // 递归获取子菜单的子孙级ID
+            $grandChildIds = treeChildIds($childIds, $model, $parentField);
+            // 合并到结果中
+            $allIds = array_merge($allIds, $grandChildIds);
+        }
+    }
+    return $allIds;
+}
+
 function VatUid(){
     return \Tinywan\Jwt\JwtToken::getCurrentId();
 }

@@ -8,6 +8,7 @@ use plugin\vatadmin\app\model\admin\AdminRoleMenu;
 use plugin\vatadmin\app\controller\BaseController;
 use support\Container;
 use support\Request;
+use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
 
 /**
  * @property \plugin\vatadmin\app\model\admin\AdminMenu $model
@@ -31,6 +32,21 @@ class MenuController extends BaseController{
         $list = AdminMenu::buildTreeSimple(AdminMenu::getAll());
         $selected = AdminRoleMenu::getMenuByRoleId($role_id);
         return $this->ok('ok', ['list' => $list, 'selected' => $selected]);
+    }
+
+    public function before($type, &$ids, &$model){
+        if($type === 'delete'){
+            //获取当前id及所有子集及子孙级id
+            $ids = treeChildIds($ids, $this->model);
+            $model = $model->whereIn('id', $ids);
+        }
+    }
+
+    public function after($type, $ids, $model){
+        if($type == 'delete'){
+            //删除角色菜单关联数据
+            AdminRoleMenu::whereIn('menu_id', $ids)->delete();
+        }
     }
 }
 
