@@ -221,11 +221,13 @@ class BaseController{
     public function edit(Request $request){
         $data = $request->post();
         $this->initPage();
-        if(!isset($this->pageInfo['tpl_json']['setting']['edit_validate']) || $this->pageInfo['tpl_json']['setting']['edit_validate']){
-            $this->validate($this->buildValidate());
-        }
-        //操作数据前
         $calledClass = get_called_class();
+        $rules = $this->buildValidate();
+        if(!isset($this->pageInfo['tpl_json']['setting']['edit_validate']) || $this->pageInfo['tpl_json']['setting']['edit_validate']){
+            method_exists($calledClass, 'rules') && $this->rules($rules, $data);
+            $this->validate($rules);
+        }
+
         method_exists($calledClass, 'before') && $this->before('edit', $data);
         if($data['id']) {
             //编辑

@@ -6,6 +6,7 @@
       :api-list="state.pageJson.api"
       :columns="state.pageJson.columns"
       :tools="state.pageJson.tools"
+      :settings="state.pageJson.settings"
       @toolsChange="toolsChange">
   </VatPage>
   <!-- 添加编辑 -->
@@ -103,7 +104,8 @@
       api: pageJsonData.api_list,
       columns: tools.pages.sortColumns(Object.values(column)),
       fields: tools.pages.buildSearch(pageJsonData.fields),
-      tools: pageJsonData.tools
+      tools: pageJsonData.tools,
+      settings: pageJsonData?.setting || {}
     }
   })
 

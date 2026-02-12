@@ -34,6 +34,13 @@ class UserController extends BaseController
         }
     }
 
+    public function rules(&$rules, $data){
+        if($data['id']){
+            unset($rules['password']);
+        }
+    }
+
+
     public function before($type, &$data, $model = null){
         if($type === 'edit'){
             if(!$data['id']){
