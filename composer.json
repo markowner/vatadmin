@@ -19,7 +19,7 @@
         "webman/redis": "^2.1",
         "webman/event": "^1.0",
         "webman/push": "^1.1",
-        "tinywan/jwt": "^1.11",
+        "tinywan/jwt": "^1.15",
         "tinywan/exception-handler": "^1.6",
         "shopwwi/webman-filesystem": "^2.0",
         "rap2hpoutre/fast-excel": "^5.6",
