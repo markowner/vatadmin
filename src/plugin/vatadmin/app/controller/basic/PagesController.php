@@ -96,17 +96,21 @@ class PagesController extends BaseController
         $controllerTplData = file_get_contents($controllerTplPath);
         $controllerTplData = str_replace(
             [
+                '{#build_module_name#}',
                 '{#build_app_name#}',
                 '{#build_controller_dir#}',
                 '{#build_controller_name#}',
+                '{#build_model_app#}',
                 '{#build_model_dir#}',
                 '{#build_model_name#}',
                 '{#build_table_code#}',
             ],
             [
-                $page['build_app_name'],
+                $page['build_module'] == 1 ? 'plugin' : 'app',
+                $page['build_module'] == 1 ? $page['build_app_name'].'\\app' : $page['build_app_name'],
                 $buildController[0] ? '\\' . $buildController[0] : '',
                 $buildController[1],
+                $page['build_module'] == 1 ? '\\'.$page['build_app_name'].'\\app' : '',
                 $buildModel[0] ? '\\' . $buildModel[0] : '',
                 $buildModel[1],
                 $page['table_code'],
@@ -114,7 +118,8 @@ class PagesController extends BaseController
             $controllerTplData
         );
         //获取生成路径
-        $path = app_path() . DIRECTORY_SEPARATOR . $page['build_app_name'] . DIRECTORY_SEPARATOR . 'controller';
+        $basePath = $page['build_module'] == 1 ? base_path('plugin') : app_path();
+        $path = $basePath . DIRECTORY_SEPARATOR . $page['build_app_name'] . ($page['build_module'] == 1 ? DIRECTORY_SEPARATOR . 'app' : ''). DIRECTORY_SEPARATOR . 'controller';
         $buildController[0] && $path .= DIRECTORY_SEPARATOR . $buildController[0];
         if (!is_dir($path)) {
             if (!mkdir($path, 0777, true) && !is_dir($path)) {
@@ -122,6 +127,7 @@ class PagesController extends BaseController
             }
         }
         $path .= DIRECTORY_SEPARATOR . $buildController[1].'Controller.php';
+        echo '生成控制器：'.$path;
         file_put_contents($path, $controllerTplData);
     }
 
@@ -151,12 +157,14 @@ class PagesController extends BaseController
         }
         $modelTplData = str_replace(
             [
+                '{#build_module_name#}',
                 '{#build_model#}',
                 '{#build_model_name#}',
                 '{#build_model_field#}',
                 '{#table#}'
             ],
             [
+                $page['build_module'] == 1 ? 'plugin\\'.$page['build_app_name'].'\\app' : 'app',
                 $buildModel[0] ? '\\' . $buildModel[0] : '',
                 $buildModel[1],
                 rtrim($build_model_field),
@@ -165,7 +173,12 @@ class PagesController extends BaseController
             $modelTplData
         );
         //获取生成路径
-        $path = app_path() . DIRECTORY_SEPARATOR . 'model';
+        $basePath = $page['build_module'] == 1 ? base_path('plugin') : app_path();
+        if($page['build_module'] == 1){
+            $path = $basePath . DIRECTORY_SEPARATOR . $page['build_app_name'] . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'model';
+        }else{
+            $path = $basePath . DIRECTORY_SEPARATOR . 'model';
+        }
         $buildModel[0] && $path .= DIRECTORY_SEPARATOR . $buildModel[0];
         if (!is_dir($path)) {
             if (!mkdir($path, 0777, true) && !is_dir($path)) {
@@ -173,6 +186,7 @@ class PagesController extends BaseController
             }
         }
         $path .= DIRECTORY_SEPARATOR . $buildModel[1].'.php';
+        echo '生成模型：'.$path;
         file_put_contents($path, $modelTplData);
     }
 
@@ -289,11 +303,40 @@ class PagesController extends BaseController
         $tableFields = $db->getFields($table);
         $fields = $this->generateFieldConfigs($tableFields);
 
+        // 获取build_app_name，默认为admin
+        $buildModule = $request->input('build_module', 0);
+        $buildAppName = $request->input('build_app_name', $buildModule ? 'vatadmin' : 'admin');
+
         $tableSimple = strpos($table, 'vat_') === 0 ? preg_replace('/vat_/', '', $table, 1) : $table;
-        $camelCase = str_replace('_', '', ucwords($tableSimple, '_'));
+        
+        // 解析目录和类名
+        // vat_member -> 目录member，类名Member
+        // vat_member_log -> 目录member，类名MemberLog
+        // vat_brand_city -> 目录brand，类名BrandCity
+        $parts = explode('_', $tableSimple);
+        // 第一个单词作为目录
+        $directory = $parts[0];
+        // 整个表名转换为驼峰命名作为类名
+        $className = str_replace('_', '', ucwords($tableSimple, '_'));
+        // 所有表名都生成目录结构
+        $buildController = $directory . '/' . $className;
+        $buildModel = $directory . '/' . $className;
+        $buildView = $directory . '/' . $className;
+        
+        $apiListRoutePrefix = $buildModule ? 'app/'.$buildAppName : $buildAppName;
+
+        // 生成API列表配置
+        $apiList = [
+            'list' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/list', 'method' => 'get'],
+            'edit' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/edit', 'method' => 'post'],
+            'lock' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/lock', 'method' => 'post'],
+            'delete' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/delete', 'method' => 'post'],
+            'import' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/import', 'method' => 'post'],
+            'download' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/download', 'method' => 'get']
+        ];
 
         $systemTplJson = [
-            'api_list' => (object)[],
+            'api_list' => $apiList,
             'joins' => [],
             'select_fields' => '*',
             'fields' => $fields,
@@ -301,22 +344,33 @@ class PagesController extends BaseController
             'setting' => (object)[]
         ];
 
+        // 检查是否提供了自定义 tpl_json
+        $tplJson = $request->input('tpl_json');
+        
         $data = [
             'table' => $table,
             'name' => $comment,
-            'build_app_name' => 'admin',
-            'build_controller' => $camelCase,
-            'build_model' => $camelCase,
-            'build_view' => $camelCase,
+            'build_module' => $buildModule,
+            'build_app_name' => $buildAppName,
+            'build_controller' => $buildController,
+            'build_model' => $buildModel,
+            'build_view' => $buildView,
             'build_menu_name' => $comment,
             'tpl_system_json' => json_encode($systemTplJson, JSON_UNESCAPED_UNICODE)
         ];
         $pages = Pages::where('table', $table)->order('table_code', 'desc')->find();
         $data['table_code'] = $pages ? $pages->table_code + 1 : 0;
-        $data['tpl_json'] = $data['tpl_system_json'];
+        
+        // 如果提供了自定义 tpl_json，使用它；否则使用系统生成的
+        if ($tplJson) {
+            $data['tpl_json'] = $tplJson;
+        } else {
+            $data['tpl_json'] = $data['tpl_system_json'];
+        }
+        
         $result = Pages::create($data);
 
-        return $result !== false ? $this->ok('操作成功') : $this->error('操作失败');
+        return $result !== false ? $this->ok('操作成功', $result) : $this->error('操作失败');
     }
 
 
@@ -540,16 +594,19 @@ class PagesController extends BaseController
             'datetime' => 'datetime',
         ];
 
+        $matchedKeyword = $field['name'];
+
         if (preg_match('/^(mobile|idcard|email|url|month|date|datetime)|(mobile|idcard|email|url|month|date|datetime)$/', $field['name'], $matches)) {
-             // 检查是开头匹配还是结尾匹配
+            // 检查是开头匹配还是结尾匹配
             if (!empty($matches[2])) {
                 $matchedKeyword = $matches[2]; // 开头匹配的关键字
             } elseif (!empty($matches[4])) {
                 $matchedKeyword = $matches[4]; // 结尾匹配的关键字
             }
-            if(key_exists($matchedKeyword,$ruleMap)){
-                $config['rules'] = $config['rules'] ? $config['rules'] . '|' . $ruleMap[$matchedKeyword] : $ruleMap[$matchedKeyword];
-            }
+        }
+
+        if(key_exists($matchedKeyword,$ruleMap)){
+            $config['rules'] = $config['rules'] ? $config['rules'] . '|' . $ruleMap[$matchedKeyword] : $ruleMap[$matchedKeyword];
         }
     }
 

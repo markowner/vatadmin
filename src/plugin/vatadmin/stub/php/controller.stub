@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace app\{#build_app_name#}\controller{#build_controller_dir#};
+namespace {#build_module_name#}\{#build_app_name#}\controller{#build_controller_dir#};
 
 use plugin\vatadmin\app\controller\BaseController;
 use support\Container;
 
 /**
- * @property \app\model{#build_model_dir#}\{#build_model_name#} $model
+ * @property \{#build_module_name#}{#build_model_app#}\model{#build_model_dir#}\{#build_model_name#} $model
  */
 class {#build_controller_name#}Controller extends BaseController{
 
@@ -15,7 +15,7 @@ class {#build_controller_name#}Controller extends BaseController{
  
     public function __construct()
     {
-        $this->model = Container::get(\app\model{#build_model_dir#}\{#build_model_name#}::class);
+        $this->model = Container::get(\{#build_module_name#}{#build_model_app#}\model{#build_model_dir#}\{#build_model_name#}::class);
     }
 }
 
