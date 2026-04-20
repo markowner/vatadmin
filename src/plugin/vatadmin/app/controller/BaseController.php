@@ -205,10 +205,10 @@ class BaseController{
         $model = $this->model->whereIn('id', $ids);
         $calledClass = get_called_class();
         $data = ['ids' => $ids, 'status' => $status];
-        method_exists($calledClass, 'before') && $this->before('lock', $data);
+        method_exists($calledClass, 'before') && $this->before('lock', $data, $model);
         $rs = $model->save(['status' => $status]);
         if($rs !== false){
-            method_exists($calledClass, 'after') && $this->after('lock', $data);
+            method_exists($calledClass, 'after') && $this->after('lock', $data, $model);
             return $this->ok('操作成功');
         }
         return $this->error('操作失败');
@@ -228,7 +228,7 @@ class BaseController{
             $this->validate($rules);
         }
 
-        method_exists($calledClass, 'before') && $this->before('edit', $data);
+        method_exists($calledClass, 'before') && $this->before('edit', $data, $this->model);
         if($data['id']) {
             //编辑
             $model = $this->model->find($data['id']);
@@ -238,7 +238,7 @@ class BaseController{
             $model = $rs = $this->model->create($data);
         }
         if($rs) {
-            method_exists($calledClass, 'after') && $this->after('edit', $model);
+            method_exists($calledClass, 'after') && $this->after('edit', null, $model);
             return $this->ok('保存成功');
         }
 

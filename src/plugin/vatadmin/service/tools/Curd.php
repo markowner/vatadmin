@@ -70,7 +70,11 @@ class Curd {
         $this->joins = $joins;
         $this->modelOrm = $this->model->getTable() .' t0';
         foreach ($joins as $k => $modelWith){
-            $this->modelOrm .= " " . $modelWith['join'] . " " . $modelWith['table'] . " " . $modelWith['alias'] . " ON " . $modelWith['on'];
+            if(is_string($modelWith)){
+                $this->modelOrm .= " " . $modelWith;
+            }else{
+                $this->modelOrm .= " " . $modelWith['join'] . " " . $modelWith['table'] . " " . $modelWith['alias'] . " ON " . $modelWith['on'];
+            }
         }
         return $this;
     }
