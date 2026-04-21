@@ -48,6 +48,25 @@ class PagesController extends BaseController
     }
 
     /**
+     * 回写页面数据
+     * @param Request $request
+     */
+    public function reverseLoad(Request $request){
+        $id = $request->input('id');
+        if(!$id){
+            return $this->error('参数错误');
+        }
+        //获取page信息
+        $page = Pages::find($id);
+        if(!$page){
+            return $this->error('数据错误');
+        }
+        //根据前端JSON回写数据
+        $this->_reverseLoad($page);
+        return $this->ok('回写成功');
+    }
+
+    /**
      * 构建页面
      * @param Request $request
      * @return \support\Response
@@ -236,6 +255,18 @@ class PagesController extends BaseController
     }
 
     /**
+     * 根据文件json回刷数据
+     * @param $page
+     */
+    private function _reverseLoad($page){
+        $path = BASE_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . ($page['build_project'] ?:getenv('VAT_ADMIN_PROJECT_NAME')) . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'vat'. DIRECTORY_SEPARATOR .'pages'. DIRECTORY_SEPARATOR . $page['table'] . '.json';
+        $tpl_json = json_decode(file_get_contents($path));
+        //压缩json串
+        $page['tpl_json'] = json_encode($tpl_json, JSON_UNESCAPED_UNICODE);
+        $page->save();
+    }
+
+    /**
      * 生成菜单
      * @param $page
      */
@@ -260,10 +291,8 @@ class PagesController extends BaseController
         //添加子菜单记录
         $subMenu = [
             ['name' => '列表', 'path' => $page->table . '_list', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'list'],
-            ['name' => '添加', 'path' => $page->table . '_add', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'edit'],
-            ['name' => '编辑', 'path' => $page->table . '_edit', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'edit'],
+            ['name' => '添加编辑', 'path' => $page->table . '_edit', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'edit'],
             ['name' => '锁定', 'path' => $page->table . '_lock', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'lock'],
-            ['name' => '解锁', 'path' => $page->table . '_unlock', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'lock'],
             ['name' => '删除', 'path' => $page->table . '_delete', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'delete'],
             ['name' => '导入', 'path' => $page->table . '_import', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'import*'],
             ['name' => '下载', 'path' => $page->table . '_download', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'download*'],
@@ -638,6 +667,7 @@ class PagesController extends BaseController
         return [
             'add' => ['show' => true, 'permission_key' => $table . '_add'],
             'edit' => ['show' => true, 'permission_key' => $table . '_edit'],
+            'switch_lock' => ['show' => false, 'permission_key' => $table . '_switch_lock'],
             'lock' => ['show' => false, 'permission_key' => $table . '_lock'],
             'unlock' => ['show' => false, 'permission_key' => $table . '_unlock'],
             'delete' => ['show' => false, 'permission_key' => $table . '_delete'],
