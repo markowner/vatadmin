@@ -8,8 +8,8 @@ use plugin\vatadmin\service\internal\socket\SocketClient;
 use support\Log;
 use think\facade\Db;
 
-class ImportRealize{
-    public static function run($data)
+class ImportRealize extends BaseRealize{
+    public static function exec($data)
     {
         try{
             $UploadLogRs = UploadLog::find($data['id']);
@@ -30,9 +30,10 @@ class ImportRealize{
 
             SocketClient::send($UploadLogRs->admin_id, $params['title']."导入成功", $params['title']."导入成功");
         }catch(\Throwable $e){
+            echo $e->getTraceAsString();
             Log::info('导入文件失败',['id' => $data['id'],'msg' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
             SocketClient::send($UploadLogRs->admin_id, $params['title']."导入失败", $params['title']."导入失败" );
-            throw new \Exception($e->getMessage());
+            throw new \Exception($e->getMessage(), self::ErrorNoticeNotSendCode);
         }
     }
 

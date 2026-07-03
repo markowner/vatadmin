@@ -38,48 +38,106 @@ class UserController extends BaseController
      */
     public function login(Request $request)
     {
-        $username = $request->input('username');
-        $password = $request->input('password');
-        $captcha = $request->input('captcha');
-        if(!$captcha){
-            return $this->error('请先安全验证');
-        }
-        //检测账号密码
         try {
+            $client     = $request->input('client', 'admin');           //客户端类型 多应用 admin|member
+            $loginMode  = $request->input('login_mode', 'account');     //登录模式 account|mobile|email
+            $username   = $request->input('username');
+            $password   = $request->input('password');
+            $captcha    = $request->input('captcha');
+            
+            if($client != 'admin' && $client != 'member'){
+                throw new BadRequestHttpException('应用类型错误');
+            }
+
+            switch ($loginMode) {
+                case 'account':
+                    if(!$username){
+                        throw new BadRequestHttpException('请输入账号');
+                    }
+                    if(!$password){
+                        throw new BadRequestHttpException('请输入密码');
+                    }
+                    break;
+                case 'mobile':
+                    if(!$username){
+                        throw new BadRequestHttpException('请输入手机号');
+                    }
+                    if(!$password){
+                        throw new BadRequestHttpException('请输入验证码');
+                    }
+                    break;
+                case 'email':
+                    if(!$username){
+                        throw new BadRequestHttpException('请输入邮箱');
+                    }
+                    if(!$password){
+                        throw new BadRequestHttpException('请输入验证码');
+                    }
+                    break;
+                default:
+                    throw new BadRequestHttpException('登录模式错误');
+            }
+            if(!$captcha){
+                return $this->error('请先安全验证');
+            }
             $captchaInfo = json_decode(base64_decode($captcha), true);
             //检测验证
             $res = Captcha::type($captchaInfo['t'])->check($captchaInfo['k'], $captchaInfo['x'], 8, Redis::get($captchaInfo['k']));
             if(!$res){
                 return $this->error('安全验证未通过');
             }
-            $adminUserRs = $this->model::checkLogin($username, $password);
-            $user = [
-                'id'            => $adminUserRs->id,
-                'name'          => $adminUserRs->name,
-                'username'      => $adminUserRs->username,
-            ];
+
+            $this->setModel($client);
+            $func = $loginMode.'Login';
+            $result = $this->$func($username, $password, $client);
+
+            $user = $result['user'];
+            $adminUserRs = $result['model'];
+            
+            $jwtRs = JwtToken::generateToken($user);
+            $userInfo = $this->model::userInfo($adminUserRs);
+            $jwtRs = array_merge($jwtRs, $userInfo);
+            //最后登录时间
+            $adminUserRs->save(['last_login_time' => date('Y-m-d H:i:s')]);
         }catch (BadRequestHttpException $e){
-            Event::emit('user.login', ['username' => $username, 'message' => $e->getMessage()]);
+            Event::emit("{$client}.login", ['username' => $username, 'login_mode' => $loginMode, 'message' => $e->getMessage()]);
             throw new BadRequestHttpException($e->getMessage());
         }catch (\Throwable $e){
-            Event::emit('user.login', ['username' => $username, 'message' => '登录失败']);
-            throw new BadRequestHttpException('登录失败');
+            Event::emit("{$client}.login", ['username' => $username, 'login_mode' => $loginMode, 'message' => '登录失败']);
+            throw new BadRequestHttpException('登录失败'.$e->getMessage().$e->getLine().$e->getFile());
         }
 
-        $jwtRs = JwtToken::generateToken($user);
-        $userInfo = $this->model::userInfo($adminUserRs);
-        $jwtRs = array_merge($jwtRs, $userInfo);
-        //最后登录时间
-        $adminUserRs->save(['last_login_time' => date('Y-m-d H:i:s')]);
         
         // 加载系统 配置和字典
         AdminConfig::refreshConfig();
         AdminDict::refreshCache();
 
         //登录事件
-        Event::emit('user.login', ['username' => $username, 'message' => '登录成功']);
+        Event::emit("{$client}.login", ['username' => $username, 'login_mode' => $loginMode, 'message' => '登录成功']);
         return $this->ok('登录成功', $jwtRs);
 
+    }
+
+    private function setModel(string $client){
+        if($client == 'admin'){
+            $this->model = Container::get(\plugin\vatadmin\app\model\admin\AdminUser::class);
+        }else if($client == 'member'){
+            $this->model = Container::get(\plugin\vatadmin\app\model\member\Member::class);
+        }
+    }
+
+    private function accountLogin(string $username, string $password, string $client){
+        $adminUserRs = $this->model::checkLogin($username, $password);
+        
+        $user = [
+            'id'            => $adminUserRs->id,
+            'name'          => $adminUserRs->name,
+            'username'      => $adminUserRs->username,
+            'mobile'        => $adminUserRs->mobile,
+            'email'         => $adminUserRs->email,
+            'client'        => $client,
+        ];
+        return ['user' => $user, 'model' => $adminUserRs];
     }
 
     /**

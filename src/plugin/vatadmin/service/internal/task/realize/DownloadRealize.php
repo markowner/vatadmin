@@ -7,10 +7,10 @@ use plugin\vatadmin\service\internal\socket\SocketClient;
 use support\Log;
 
 
-class DownloadRealize{
-    public static function run($data)
+class DownloadRealize extends BaseRealize{
+    public static function exec($data)
     {
-        $name = '';
+        $name = $data['name'] ? : '';
         try{
             $fileUrl = '';
             //跳转对应事件方法，static 方法名为 event + 驼峰命名
@@ -21,9 +21,10 @@ class DownloadRealize{
             $fileUrl = self::$eventMethod($data);
             SocketClient::send($data['admin_id'], "导出成功","【".$name."】数据导出成功，". '<a target="_blank" href="'.$fileUrl.'">点击下载</a>' );
         }catch(\Exception $e){
+            echo $e->getTraceAsString();
             Log::info('文件下载失败',['data' => $data,'msg' => $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
             SocketClient::send($data['admin_id'], "导出失败","【".$name."】数据导出失败，请稍后在试，如还不行请联系管理员");
-            throw new \Exception($e->getMessage());
+            throw new \Exception($e->getMessage(), self::ErrorNoticeNotSendCode);
         }
     }
 

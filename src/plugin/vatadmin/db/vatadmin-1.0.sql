@@ -383,6 +383,7 @@ INSERT INTO `vat_admin_menu` (`id`, `name`, `path`, `component`, `icon`, `parent
 INSERT INTO `vat_admin_menu` (`id`, `name`, `path`, `component`, `icon`, `parent_id`, `active`, `hidden`, `hidden_breadcrumb`, `affix`, `type`, `fullpage`, `is_permission`, `permission_route`, `redirect`, `cached`, `sortrank`, `platform_id`, `status`, `createtime`, `updatetime`) VALUES (201, '导入', 'vat_member_group_import', '', '', 194, '', 1, 0, 0, 'button', 0, 1, '/vatadmin/member/MemberGroup/import*', '', 0, 0, 0, 0, '2026-04-20 14:35:06', '2026-04-20 14:35:06');
 INSERT INTO `vat_admin_menu` (`id`, `name`, `path`, `component`, `icon`, `parent_id`, `active`, `hidden`, `hidden_breadcrumb`, `affix`, `type`, `fullpage`, `is_permission`, `permission_route`, `redirect`, `cached`, `sortrank`, `platform_id`, `status`, `createtime`, `updatetime`) VALUES (202, '下载', 'vat_member_group_download', '', '', 194, '', 1, 0, 0, 'button', 0, 1, '/vatadmin/member/MemberGroup/download*', '', 0, 0, 0, 0, '2026-04-20 14:35:06', '2026-04-20 14:35:06');
 INSERT INTO `vat_admin_menu` (`id`, `name`, `path`, `component`, `icon`, `parent_id`, `active`, `hidden`, `hidden_breadcrumb`, `affix`, `type`, `fullpage`, `is_permission`, `permission_route`, `redirect`, `cached`, `sortrank`, `platform_id`, `status`, `createtime`, `updatetime`) VALUES (203, '批量操作', 'vat_member_group_batch', '', '', 194, '', 1, 0, 0, 'button', 0, 1, '/vatadmin/member/MemberGroup/batch*', '', 0, 0, 0, 0, '2026-04-20 14:35:06', '2026-04-20 14:35:06');
+INSERT INTO `vat_admin_menu` (`id`, `name`, `path`, `component`, `icon`, `parent_id`, `active`, `hidden`, `hidden_breadcrumb`, `affix`, `type`, `fullpage`, `is_permission`, `permission_route`, `redirect`, `cached`, `sortrank`, `platform_id`, `status`, `createtime`, `updatetime`) VALUES (204, '插件市场', '/plugin', 'plugin/index', 'plugins', 111, '', 0, 0, 0, 'menu', 0, 1, '/app/vatadmin/basic/plugin*', '', 0, 0, 0, 0, '2026-04-13 17:45:16', '2026-04-13 17:45:16');
 
 COMMIT;
 
@@ -693,7 +694,7 @@ INDEX `idx_member_id`(`member_id` ASC) USING BTREE,
 PRIMARY KEY (`id`)
 ) ENGINE = InnoDB COMMENT = "会员积分记录表";
 
-
+-- 会员消息通知表
 DROP TABLE IF EXISTS `vat_member_notice`;
 CREATE TABLE `vat_member_notice` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
@@ -707,5 +708,23 @@ CREATE TABLE `vat_member_notice` (
   PRIMARY KEY (`id`),
   KEY `member_id` (`member_id`)
 ) ENGINE=InnoDB COMMENT='会员消息通知表';
+
+-- 异步任务
+CREATE TABLE `vat_task_async` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID编号',
+  `title` varchar(200) NOT NULL COMMENT '名称',
+  `namespace` varchar(255) NOT NULL DEFAULT '' COMMENT '命名空间',
+  `exec_class` varchar(255) NOT NULL DEFAULT '' COMMENT '执行类',
+  `params` text COMMENT '参数',
+  `content` text COMMENT '内容',
+  `start_time` int NOT NULL DEFAULT '0' COMMENT '开始时间',
+  `end_time` int NOT NULL DEFAULT '0' COMMENT '结束时间',
+  `admin_id` int NOT NULL DEFAULT '0' COMMENT '用户ID',
+  `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态',
+  `createtime` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updatetime` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_admin_id` (`admin_id`)
+) ENGINE=InnoDB COMMENT='异步任务表';
 
 SET FOREIGN_KEY_CHECKS = 1;

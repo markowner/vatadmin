@@ -38,4 +38,18 @@ class MemberNotice extends Model
      */
     protected $pk = 'id';
 
+
+     /**
+     * 获取未读数量
+     */
+    public static function getCountNoRead($memberId){
+        return self::where('is_read', 0)->whereOr([['member_id','=', 0], ['member_id', '=', $memberId]])->count();
+    }
+
+    /**
+     * 设置已读
+     */
+    public static function setRead($id){
+        return self::find($id)->save(['is_read' => 1]);
+    }
 }

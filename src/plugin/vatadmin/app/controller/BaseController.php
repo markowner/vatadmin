@@ -33,6 +33,98 @@ class BaseController{
     protected $treeField = 'id|parent_id'; //tree字段，格式：id|parent_id
 
     /**
+     * 注入额外的查询条件
+     * 子类可重写此方法添加自定义查询条件
+     * @param array $where 查询条件数组，通过引用传递
+     * @return void
+     */
+    protected function injectWhere(array &$where): void
+    {
+        // 默认空实现，子类可重写
+    }
+
+    /**
+     * 注入额外的查询参数
+     * 子类可重写此方法修改查询参数（如排序、分组等）
+     * @param array $params 查询参数数组，通过引用传递
+     * @return void
+     */
+    protected function injectSelectParams(array &$params): void
+    {
+        // 默认空实现，子类可重写
+    }
+
+    /**
+     * 执行数据映射前的准备工作
+     * 子类可重写此方法在数据映射前执行自定义逻辑
+     * @return void
+     */
+    protected function injectMap(): void
+    {
+        // 默认空实现，子类可重写
+    }
+
+    /**
+     * 为单行数据注入额外属性
+     * 子类可重写此方法为每行数据添加自定义字段
+     * @param array $row 单行数据，通过引用传递
+     * @return void
+     */
+    protected function injectAttr(array &$row): void
+    {
+        // 默认空实现，子类可重写
+    }
+
+    /**
+     * 构建树形结构数据
+     * 子类可重写此方法自定义树形结构的构建逻辑
+     * @param array $rows 数据列表，通过引用传递
+     * @return void
+     */
+    protected function buildTree(array &$rows): void
+    {
+        $rows = tree($rows, 0, $this->treeField);
+    }
+
+    /**
+     * 数据操作前的钩子方法
+     * 子类可重写此方法在操作前执行自定义逻辑（如数据验证、权限检查）
+     * @param string $type 操作类型：edit、delete、lock 等
+     * @param mixed $data 操作数据，通过引用传递可修改
+     * @param mixed $model 模型实例（可选）
+     * @return void
+     */
+    protected function before(string $type, &$data, $model = null): void
+    {
+        // 默认空实现，子类可重写
+    }
+
+    /**
+     * 数据操作后的钩子方法
+     * 子类可重写此方法在操作后执行自定义逻辑（如日志记录、缓存更新）
+     * @param string $type 操作类型：edit、delete、lock 等
+     * @param mixed $data 操作数据
+     * @param mixed $model 模型实例（可选）
+     * @return void
+     */
+    protected function after(string $type, $data, $model = null): void
+    {
+        // 默认空实现，子类可重写
+    }
+
+    /**
+     * 自定义验证规则
+     * 子类可重写此方法添加或修改验证规则
+     * @param array $rules 验证规则数组，通过引用传递
+     * @param array $data 待验证数据
+     * @return void
+     */
+    protected function rules(array &$rules, array $data): void
+    {
+        // 默认空实现，子类可重写
+    }
+
+    /**
      * 成功返回格式
      */
     public function ok($msg = 'success', $data = []){
@@ -64,21 +156,19 @@ class BaseController{
         $curd = Curd::factory($this->model);
         $curd->initPage($this->pageInfo);
         $where = $curd->filterCondition($filter, $this->buildCondition());
-        $calledClass = get_called_class();
         $this->injectConfineData($where);
-        method_exists($calledClass, 'injectWhere') && $this->injectWhere($where);
+        $this->injectWhere($where);
         $params = $curd->buildParams($curd->buildWhere($where));
-        method_exists($calledClass, 'injectSelectParams') && $this->injectSelectParams($params);
+        $this->injectSelectParams($params);
         $rows = $curd->select($params);
 //        $rows = $curd->select($curd->filterConditionWhere($filter, $this->buildCondition()));
         $fieldDict = $this->buildDict();
-        $calledClass = get_called_class();
-        method_exists($calledClass, 'injectMap') && $this->injectMap();
+        $this->injectMap();
         foreach ($rows['list'] as $k => &$row){
             foreach ($fieldDict as $field => $dict){
                 $row[$field] !== '' && $row[$field] !== null && $row[$field.'_desc'] = $dict[$row[$field]];
             }
-            method_exists($calledClass, 'injectAttr') && $this->injectAttr($row);
+            $this->injectAttr($row);
         }
         return $this->ok('success', $rows);
     }
@@ -94,17 +184,12 @@ class BaseController{
         $curd->initPage($this->pageInfo);
         $rows = $curd->fetch($curd->filterConditionWhere($filter, $this->buildCondition()));
         $fieldDict = $this->buildDict();
-        $calledClass = get_called_class();
         foreach ($rows as $k => &$row){
             foreach ($fieldDict as $field => $dict){
                 $row[$field] !== '' && $row[$field] !== null && $row[$field.'_desc'] = $dict[$row[$field]];
             }
         }
-        if(method_exists($calledClass, 'buildTree')){
-            $this->buildTree($rows);
-        }else{
-            $rows = tree($rows, 0, $this->treeField);
-        }
+        $this->buildTree($rows);
         return $this->ok('success', ['list' => $rows, 'total' => count($rows)]);
     }
 
@@ -118,23 +203,28 @@ class BaseController{
         $curd = Curd::factory($this->model);
         $curd->initPage($this->pageInfo);
         $where = $curd->filterCondition($filter, $this->buildCondition());
-        $calledClass = get_called_class();
-        method_exists($calledClass, 'injectOwner') && $this->injectOwner($where);
+        $this->injectOwner($where);
         $params = $curd->buildParams($curd->buildWhere($where));
-        method_exists($calledClass, 'injectSelectParams') && $this->injectSelectParams($params);
+        $this->injectSelectParams($params);
         $rows = $curd->select($params);
         $fieldDict = $this->buildDict();
-        method_exists($calledClass, 'injectMap') && $this->injectMap();
+        $this->injectMap();
         foreach ($rows['list'] as $k => &$row){
             foreach ($fieldDict as $field => $dict){
                 $row[$field] !== '' && $row[$field] !== null && $row[$field.'_desc'] = isset($dict[$row[$field]]) ? $dict[$row[$field]] : '';
             }
-            method_exists($calledClass, 'injectAttr') && $this->injectAttr($row);
+            $this->injectAttr($row);
         }
         return $this->ok('success', $rows);
     }
 
-    public function injectOwner(&$where)
+    /**
+     * 注入数据所有者限制条件
+     * 子类可重写此方法限制查询结果为当前用户所有
+     * @param array $where 查询条件数组，通过引用传递
+     * @return void
+     */
+    protected function injectOwner(array &$where): void
     {
         $where['admin_id'] = JwtToken::getCurrentId();
     }
@@ -203,12 +293,11 @@ class BaseController{
             return $this->error('参数错误');
         }
         $model = $this->model->whereIn('id', $ids);
-        $calledClass = get_called_class();
         $data = ['ids' => $ids, 'status' => $status];
-        method_exists($calledClass, 'before') && $this->before('lock', $data, $model);
+        $this->before('lock', $data, $model);
         $rs = $model->save(['status' => $status]);
         if($rs !== false){
-            method_exists($calledClass, 'after') && $this->after('lock', $data, $model);
+            $this->after('lock', $data, $model);
             return $this->ok('操作成功');
         }
         return $this->error('操作失败');
@@ -221,14 +310,13 @@ class BaseController{
     public function edit(Request $request){
         $data = $request->post();
         $this->initPage();
-        $calledClass = get_called_class();
         $rules = $this->buildValidate();
         if(!isset($this->pageInfo['tpl_json']['setting']['edit_validate']) || $this->pageInfo['tpl_json']['setting']['edit_validate']){
-            method_exists($calledClass, 'rules') && $this->rules($rules, $data);
+            $this->rules($rules, $data);
             $this->validate($rules);
         }
 
-        method_exists($calledClass, 'before') && $this->before('edit', $data, $this->model);
+        $this->before('edit', $data, $this->model);
         if($data['id']) {
             //编辑
             $model = $this->model->find($data['id']);
@@ -238,7 +326,7 @@ class BaseController{
             $model = $rs = $this->model->create($data);
         }
         if($rs) {
-            method_exists($calledClass, 'after') && $this->after('edit', null, $model);
+            $this->after('edit', null, $model);
             return $this->ok('保存成功');
         }
 
@@ -257,12 +345,11 @@ class BaseController{
         if(!is_array($ids)){
             $ids = [$ids];
         }
-        $calledClass = get_called_class();
         $model = $this->model->whereIn('id', $ids);
-        method_exists($calledClass, 'before') && $this->before('delete', $ids, $model);
+        $this->before('delete', $ids, $model);
         $rs = $model->delete();
         if($rs){
-            method_exists($calledClass, 'after') && $this->after('delete', $ids, $model);
+            $this->after('delete', $ids, $model);
             return $this->ok('删除成功');
         }
         return $this->error('删除失败');
@@ -326,19 +413,17 @@ class BaseController{
         $curd = Curd::factory($this->model);
         $curd->initPage($this->pageInfo);
         $where = $curd->filterCondition($filter, $this->buildCondition());
-        $calledClass = get_called_class();
         $this->injectConfineData($where);
-        method_exists($calledClass, 'injectWhere') && $this->injectWhere($where);
+        $this->injectWhere($where);
         $params = $curd->buildParams($curd->buildWhere($where));
         if($curd->count($params) < $this->downloadLimit){
             $rows = $curd->fetch($params);
             $fieldDict = $this->buildDict();
-            $calledClass = get_called_class();
-            method_exists($calledClass, 'injectMap') && $this->injectMap();
+            $this->injectMap();
 
             $heading = [];
             foreach ($this->pageInfo['tpl_json']['fields'] as $fields){
-                $heading[$fields['field']] = $fields['comment'];
+                $fields['table_column'] && $heading[$fields['field']] = $fields['comment'];
             }
 
             foreach ($rows as $k => &$row){
@@ -351,16 +436,14 @@ class BaseController{
                         }
                     }
                 }
-                if(method_exists($calledClass, 'injectAttr')){
-                    $exportColumn = $this->injectAttr($row);
-                    $heading = array_merge($heading, $exportColumn);
-                }
+                $this->injectAttr($row);
             }
             $name = ($this->pageInfo['build_menu_name'] ? : $this->pageInfo['name']) . date('YmdHis');
             return $this->_download($this->headings ? : $heading, $rows, 'csv', $name);
         }
 
         //异步任务下载
+        $calledClass = get_called_class();
         TaskClient::send(['event' => 'pages','params' => $params, 'calledClass' => $calledClass, 'this' => $this, 'curd' => $curd, 'admin_id' => VatUid() ], 'download');
         return $this->ok('异步下载中，请等待...');
     }

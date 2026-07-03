@@ -141,3 +141,25 @@ function VatUserExtendVal($key){
 function VatUser(){
     return \Tinywan\Jwt\JwtToken::getUser();
 }
+
+/**
+ * 获取已安装插件
+ */
+function pluginInstalled(){
+    $localPluginDir = base_path('plugin');
+    $installedSlugs = [];
+
+    if (is_dir($localPluginDir)) {
+        $dirs = scandir($localPluginDir);
+        foreach ($dirs as $dir) {
+            if ($dir === '.' || $dir === '..') continue;
+            // 排除 vatadmin 本身
+            if ($dir === 'vatadmin') continue;
+            // 目录名 = 插件标识 slug
+            if (is_dir($localPluginDir . DIRECTORY_SEPARATOR . $dir)) {
+                $installedSlugs[] = $dir;
+            }
+        }
+    }
+    return $installedSlugs;    
+}
