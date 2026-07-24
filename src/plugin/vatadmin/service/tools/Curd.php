@@ -1,23 +1,42 @@
 <?php
 /**
- * Curd操作
+ * Curd操作 - TP ORM 重构版
+ * join()   = SQL连表 LEFT JOIN
+ * with()   = ThinkPHP模型关联预加载（原生with）
+ * __call()    透传原生Query方法 where whereIn scope order etc.
  */
 namespace plugin\vatadmin\service\tools;
 
-use think\facade\Db;
+use think\db\Query;
+use think\Model;
 
-class Curd {
-
+class Curd
+{
+    /** @var Model */
     protected $model = null;
-    protected $modelOrm = null;
-    public $joins = [];
-    public $fields = '*';
+
+    // SQL JOIN连表配置
+    protected $joins = [];
+    // TP模型关联预加载配置
+    protected $withRelations = [];
+
+    protected $fields = '*';
+    protected $primaryKey = 'id';
     protected $pageInfo = [];
     protected $sort = '';
+    protected $alias = 't0';
 
-    const STATE_OK = 100;
-    const STATE_NO = 0;
-    static $whereIfFiled = ['L','LIKE','LL','LIKE_LEFT','LR','LIKE_RIGHT','IN','BETWEEN','RANGE','EQ','GT','GE','LT','LE','NE','OR','MATCH_AGAINST','MATCH_AGAINST_MODE'];
+    /**
+     * @var array 原生查询构造器回调队列（魔术方法收集）
+     */
+    protected $queryCallbacks = [];
+
+    static $whereIfFiled = [
+        'L', 'LIKE', 'LL', 'LIKE_LEFT', 'LR', 'LIKE_RIGHT',
+        'IN', 'BETWEEN', 'RANGE', 'EQ', 'GT', 'GE', 'LT', 'LE', 'NE',
+        'OR', 'MATCH_AGAINST', 'MATCH_AGAINST_MODE'
+    ];
+
     static $switchIfField = [
         'EQ' => '等于',
         'GT' => '大于',
@@ -30,378 +49,381 @@ class Curd {
     private function __construct($obj)
     {
         $this->model = $obj;
-        $this->modelOrm = $obj->getTable();
+        $this->setPrimaryKey($this->model->getPk() ?: 'id');
     }
 
-    static function factory($obj){
+    static function factory($obj)
+    {
         return new self($obj);
     }
-
 
     public function initPage($pageInfo)
     {
         $this->setPageInfo($pageInfo);
-        $pageInfo['tpl_json']['joins'] && $this->with($this->pageInfo['tpl_json']['joins']);
-        $pageInfo['tpl_json']['select_fields'] && $this->fields($this->pageInfo['tpl_json']['select_fields']);
+        if (!empty($pageInfo['tpl_json']['joins'])) {
+            $this->join($pageInfo['tpl_json']['joins']);
+        }
+        if (!empty($pageInfo['tpl_json']['with'])) {
+            $this->with($pageInfo['tpl_json']['with']);
+        }
+        if (!empty($pageInfo['tpl_json']['select_fields'])) {
+            $this->fields($pageInfo['tpl_json']['select_fields']);
+        }
         return $this;
     }
+
     public function setPageInfo($pageInfo)
     {
         $this->pageInfo = $pageInfo;
         return $this;
     }
 
-    public function setSort($order){
+    public function setAlias($alias)
+    {
+        $this->alias = $alias;
+        return $this;
+    }
+
+    public function setSort($order)
+    {
         $this->sort = $order;
     }
 
-    public function buildFieldTable(){
+    public function buildFieldTable()
+    {
         $table = [];
-        foreach ($this->pageInfo['tpl_json']['fields'] as $fields){
+        foreach ($this->pageInfo['tpl_json']['fields'] as $fields) {
             $table[$fields['field']] = $fields['table_alias'];
         }
         return $table;
     }
 
     /**
-     * @param $joins [['join' => 'LEFT JOIN', 'table' => 'admin_role', 'alias' => 't1' ,'on' => 't0.roles = t1.id']];
+     * SQL连表【替代原来的with方法】
+     * @param array $joins [['join' => 'LEFT JOIN', 'table' => 'admin_role', 'alias' => 't1' ,'on' => 't0.roles = t1.id']];
+     * @return $this
      */
-    public function with($joins){
+    public function join($joins)
+    {
         $this->joins = $joins;
-        $this->modelOrm = $this->model->getTable() .' t0';
-        foreach ($joins as $k => $modelWith){
-            if(is_string($modelWith)){
-                $this->modelOrm .= " " . $modelWith;
-            }else{
-                $this->modelOrm .= " " . $modelWith['join'] . " " . $modelWith['table'] . " " . $modelWith['alias'] . " ON " . $modelWith['on'];
-            }
-        }
         return $this;
     }
 
+    /**
+     * ThinkPHP原生模型关联预加载
+     * 用法和框架完全一致：->with(['user','orders'=>fn($q)=>$q->where(...)])
+     */
+    public function with($with)
+    {
+        $this->withRelations = $with;
+        return $this;
+    }
 
     /**
-     * 分页查询
-     * 格式: [
-     *          'field' => 'id,`name`,user_id',
-     *          'where' => 'type = 1',
-     *          'group'  => 'user_id',
-     *          'order'  => 'id DESC',
-     *          'page'   => 1,
-     *          'size'   => 20
-     *      ]
-     * @param $where
-     * @return array
+     * 内部挂载JOIN语句
      */
-    public function select($assist){
-        $select = $assist['field'] ?? $this->fields;
-        $where = '';
-        if(isset($assist['where'])){
-            if(is_array($assist['where'])){
-                $where = $this->where($assist['where']);
-            }elseif(is_string($assist['where'])){
-                $where = $assist['where'];
+    protected function attachJoin(Query $query)
+    {
+        if (empty($this->joins)) {
+            return;
+        }
+        $query->alias($this->alias);
+        foreach ($this->joins as $modelWith) {
+            if (is_string($modelWith)) {
+                $query->joinRaw($modelWith);
+            } else {
+                $type = strtolower(str_replace(' ', '', $modelWith['join']));
+                //判断如果是inner join 则转换为join
+                $type = $type == 'innerjoin' ? 'join' : $type;
+                $table = $modelWith['table'] . ' ' . $modelWith['alias'];
+                $query->$type($table, $modelWith['on']);
             }
         }
+    }
 
-        $model = $this->modelOrm;
-        $baseSql = 'SELECT ' . $select . " FROM " . $model;
-        $sql = '';
-        $where && $sql .= " WHERE {$where}";
+    /**
+     * 设置查询字段
+     */
+    public function fields($fields)
+    {
+        $this->fields = $fields;
+        return $this;
+    }
 
-        //分组|获取总数
-        if(isset($assist['group']) && $assist['group']){
-            $sql .= " GROUP BY ".$assist['group'];
-            //获取总数
-            $totalRs = Db::query("SELECT COUNT(*) cnt FROM (" . $baseSql . $sql . ") t");
-            $total = $totalRs[0]['cnt'];
-        }else{
-            //获取总数
-            $totalRs =   Db::query("SELECT COUNT(*) cnt FROM {$model} {$sql}");
-            $total = $totalRs[0]['cnt'];
+    /**
+     * 设置主键
+     */
+    public function setPrimaryKey($primaryKey)
+    {
+        $this->primaryKey = $primaryKey;
+        return $this;
+    }
+
+    // ======================== 核心查询方法 ========================
+
+    public function select($assist)
+    {
+        $query = $this->buildBaseQuery($assist);
+
+        // 挂载模型关联预加载
+        if (!empty($this->withRelations)) {
+            $query->with($this->withRelations);
         }
-        //排序
-        isset($assist['order']) && $assist['order'] && $sql .= " ORDER BY ".$assist['order'];
 
-        if($assist['export']){
-            isset($assist['limit']) && $assist['limit'] && $sql .= " LIMIT {$assist['limit']}";
-        }else{
-            //分页
-            if($assist['page']){
+        $total = $query->count();
+
+        // 排序
+        if (!empty($assist['order'])) {
+            $query->orderRaw($assist['order']);
+        } elseif ($this->sort) {
+            $query->orderRaw($this->sort);
+        } elseif (!empty($this->joins)) {
+            $query->order($this->alias . '.' . $this->primaryKey, 'desc');
+        } else {
+            $query->order($this->primaryKey, 'desc');
+        }
+
+        // limit / 分页
+        if (!empty($assist['export'])) {
+            if (!empty($assist['limit'])) {
+                $query->limit($assist['limit']);
+            }
+        } else {
+            if (!empty($assist['page'])) {
                 $size = isset($assist['size']) ? $assist['size'] : 10;
-                $start = ($assist['page'] - 1) * $size;
-                $sql .= " LIMIT {$start}, {$size}";
-            }elseif($assist['limit']){
-                $sql .= " LIMIT {$assist['limit']}";
+                $query->page($assist['page'], $size);
+            } elseif (!empty($assist['limit'])) {
+                $query->limit($assist['limit']);
             }
         }
-//        var_dump($baseSql.$sql);
-        $rows = Db::query($baseSql.$sql);
+        
+        $rows = $query->select()->toArray();
+        
         return ['total' => (int)$total, 'list' => $rows];
     }
 
+    public function fetch($assist)
+    {
+        $query = $this->buildBaseQuery($assist);
+
+        if (!empty($this->withRelations)) {
+            $query->with($this->withRelations);
+        }
+
+        if (!empty($assist['order'])) {
+            $query->orderRaw($assist['order']);
+        }
+        if (!empty($assist['limit'])) {
+            $query->limit($assist['limit']);
+        }
+
+        return $query->select()->toArray();
+    }
+
+    public function count($assist)
+    {
+        $query = $this->buildBaseQuery($assist);
+        // 清除关联预加载，count不需要with
+        $query->removeOption('with');
+        return $query->count();
+    }
+
     /**
-     * @param $assist
+     * 构建基础查询对象（field + join + where + group）
      */
-    public function fetch($assist){
-        $select = $assist['select'] ? : '*';
-        $where = '';
-        if(isset($assist['where'])){
-            if(is_array($assist['where'])){
-                $where = $this->where($assist['where']);
-            }elseif(is_string($assist['where'])){
-                $where = $assist['where'];
+    protected function buildBaseQuery($assist): Query
+    {
+        $query = $this->model->newQuery();
+        $this->attachJoin($query);
+
+        $select = $assist['field'] ?? $assist['select'] ?? $this->fields;
+        $query->field($select);
+
+        if (!empty($assist['where'])) {
+            if (is_array($assist['where'])) {
+                self::where($query, $assist['where']);
+            } elseif (is_string($assist['where'])) {
+                $query->whereRaw($assist['where']);
             }
         }
 
-        $model = $this->modelOrm;
-        $sql = 'SELECT ' . $select . " FROM " . $model;
-        $where && $sql .= " WHERE {$where}";
-        isset($assist['group']) && $assist['group'] && $sql .= " GROUP BY ".$assist['group'];
-        isset($assist['order']) && $assist['order'] && $sql .= " ORDER BY ".$assist['order'];
-        isset($assist['limit']) && $assist['limit'] && $sql .= " LIMIT {$assist['limit']}";
-        return Db::query($sql);
+        if (!empty($assist['group'])) {
+            $query->group($assist['group']);
+        }
+
+        foreach ($this->queryCallbacks as $callback) {
+            $callback($query);
+        }
+
+        return $query;
     }
 
-    /**
-     * 获取总数
-     * @return mixed
-     * @throws \think\db\exception\BindParamException
-     */
-    public function count($assist){
-        $select = $assist['field'] ?? $this->fields;
-        $where = '';
-        if(isset($assist['where'])){
-            if(is_array($assist['where'])){
-                $where = $this->where($assist['where']);
-            }elseif(is_string($assist['where'])){
-                $where = $assist['where'];
+    // ======================== Where 构造（参数绑定，防注入） ========================
+    public static function where(Query $query, array $whereMap)
+    {
+        foreach ($whereMap as $k => $v) {
+            if (strtoupper($k) === 'SQL') {
+                $query->whereRaw($v);
+                continue;
             }
-        }
-
-        $model = $this->modelOrm;
-        $baseSql = 'SELECT ' . $select . " FROM " . $model;
-        $sql = '';
-        $where && $sql .= " WHERE {$where}";
-
-        //分组|获取总数
-        if(isset($assist['group']) && $assist['group']){
-            $sql .= " GROUP BY ".$assist['group'];
-            //获取总数
-            $totalRs = Db::query("SELECT COUNT(*) cnt FROM (" . $baseSql . $sql . ") t");
-            $total = $totalRs[0]['cnt'];
-        }else{
-            //获取总数
-            $totalRs =   Db::query("SELECT COUNT(*) cnt FROM {$model} {$sql}");
-            $total = $totalRs[0]['cnt'];
-        }
-        return $total;
-    }
-
-    /**
-     * 分页数据￿
-     * @param $where
-     * @param $request
-     * @param array $assist
-     * @return array
-     */
-    public function getPage($where,$assist = []){
-        $assistNew = [
-            'where' => self::filterWhere($where),
-            'page' => self::requestAttr('page') ?: 1,
-            'size' => self::requestAttr('size') ?: 10,
-        ];
-        $assist && $assistNew = array_merge($assistNew, $assist);
-        return $this->select($assistNew);
-    }
-
-    /**
-     * 生成where条件
-     * @param $whereMap
-     * @return string
-     */
-    public static function where($whereMap){
-        $return = '';
-        foreach ($whereMap as $k => $v){
             /*
-           * 查询字段是否有别名,场景,同一个字段,多种判断条件
-           * 例如:
-           * $where['user_id'] = ['ge' => 15]
-           * $where['user_id|A'] = ['le' => 35]
-           * $where['user_id|B'] = ['le' => 35]
-           **/
-            if(strtoupper($k) === 'SQL'){
-                $return .= $v;
+            * 查询字段是否有别名,场景,同一个字段,多种判断条件
+            * 例如:
+            * $where['user_id'] = ['ge' => 15]
+            * $where['user_id|A'] = ['le' => 35]
+            * $where['user_id|B'] = ['le' => 35]
+            **/
+            if (strpos($k, '|') !== false) {
+                $fieldK = explode('|', $k);
+                $field = $fieldK[0];
+            } else {
+                $field = $k;
+            }
+
+            if (is_string($v) || is_numeric($v)) {
+                $query->where($field, $v);
                 continue;
             }
 
-            if(strpos($k,'|') !== false){
-                $fieldK = explode('|',$k);
-                $k = $fieldK[0];
-            }else if(strpos($k,'.') !== false){
-                $fieldK = explode('.',$k);
-                $k = "`{$fieldK[0]}`.`{$fieldK[1]}`";
-            }else{
-                $k = "`{$k}`";
-            }
-
-            if(is_string($v) || is_numeric($v)){
-                $return .= " AND {$k} = '{$v}'";
-            }elseif(is_array($v)){
-                foreach ($v as $k1 => $v1){
+            if (is_array($v)) {
+                foreach ($v as $k1 => $v1) {
                     $fieldIf = strtoupper($k1);
-                    switch ($fieldIf){
-                        case 'L' :
-                        case 'LIKE' :
-                            $return .= " AND {$k} LIKE '%{$v1}%'";
+                    switch ($fieldIf) {
+                        case 'L':
+                        case 'LIKE':
+                            $query->where($field, 'like', "%{$v1}%");
                             break;
                         case 'LL':
                         case 'LIKE_LEFT':
-                            $return .= " AND {$k} LIKE '%{$v1}'";
+                            $query->where($field, 'like', "%{$v1}");
                             break;
                         case 'LR':
                         case 'LIKE_RIGHT':
-                            $return .= " AND {$k} LIKE '{$v1}%'";
+                            $query->where($field, 'like', "{$v1}%");
                             break;
                         case 'IN':
-                            if(is_string($v1) || is_numeric($v1)){
-                                $inValStr = $v1;
-                            }elseif(is_array($v1)){
-                                $inValStr = implode(',',$v1);
-                            }else{
-                                $inValStr = '';
-                            }
-                            $inValStr && $return .= " AND {$k} IN ({$inValStr})";
+                            $arr = is_array($v1) ? $v1 : explode(',', $v1);
+                            $query->whereIn($field, $arr);
                             break;
                         case 'NOTIN':
-                            if(is_string($v1) || is_numeric($v1)){
-                                $inValStr = $v1;
-                            }elseif(is_array($v1)){
-                                $inValStr = implode(',',$v1);
-                            }else{
-                                $inValStr = '';
-                            }
-                            $inValStr && $return .= " AND {$k} NOT IN ({$inValStr})";
+                            $arr = is_array($v1) ? $v1 : explode(',', $v1);
+                            $query->whereNotIn($field, $arr);
                             break;
                         case 'BETWEEN':
                         case 'RANGE':
-                            if(is_array($v1) && count($v1) == 2){
-                                if($v1[0] && $v1[1]){
-                                    $return .= " AND {$k} BETWEEN '{$v1[0]}' AND '{$v1[1]}'";
-                                }elseif($v1[0]){
-                                    $return .= " AND {$k} >= '{$v1[0]}'";
-                                }elseif($v1[1]){
-                                    $return .= " AND {$k} <= '{$v1[1]}'";
+                            if (is_array($v1) && count($v1) == 2) {
+                                if ($v1[0] !== '' && $v1[1] !== '') {
+                                    $query->whereBetween($field, [$v1[0], $v1[1]]);
+                                } elseif ($v1[0] !== '') {
+                                    $query->where($field, '>=', $v1[0]);
+                                } elseif ($v1[1] !== '') {
+                                    $query->where($field, '<=', $v1[1]);
                                 }
                             }
                             break;
                         case 'EQ':
-                            $return .= " AND {$k} = '{$v1}'";
+                            $query->where($field, $v1);
                             break;
                         case 'EQF':
-                            $return .= " AND {$k} = {$v1}";
+                            $query->whereRaw("{$field} = {$v1}");
                             break;
                         case 'GT':
-                            $return .= " AND {$k} > '{$v1}'";
+                            $query->where($field, '>', $v1);
                             break;
                         case 'GE':
-                            $return .= " AND {$k} >= '{$v1}'";
+                            $query->where($field, '>=', $v1);
                             break;
                         case 'LT':
-                            $return .= " AND {$k} < '{$v1}'";
+                            $query->where($field, '<', $v1);
                             break;
                         case 'LE':
-                            $return .= " AND {$k} <= '{$v1}'";
+                            $query->where($field, '<=', $v1);
                             break;
                         case 'NE':
                         case 'NEQ':
-                            $return .= " AND {$k} <> '{$v1}'";
+                            $query->where($field, '<>', $v1);
                             break;
                         case 'NEF':
-                            $return .= " AND {$k} <> {$v1}";
+                            $query->whereRaw("{$field} <> {$v1}");
                             break;
                         case 'OR':
-                            $return .= " AND {$v1}";
+                            $query->whereRaw($v1);
                             break;
                         case 'ETS':
                         case 'EXISTS':
-                            $return .= " AND EXISTS ({$v1})";
+                            $query->whereExists(function ($q) use ($v1) {
+                                $q->whereRaw($v1);
+                            });
                             break;
                         case 'NETS':
                         case 'NOT_EXISTS':
-                            $return .= " AND NOT EXISTS ({$v1})";
+                            $query->whereNotExists(function ($q) use ($v1) {
+                                $q->whereRaw($v1);
+                            });
                             break;
                         case 'NULL':
-                            $return .= " AND {$k} IS NULL";
+                            $query->whereNull($field);
                             break;
                         case 'NOT_NULL':
-                            $return .= " AND {$k} IS NOT NULL";
+                            $query->whereNotNull($field);
                             break;
                         case 'MATCH_AGAINST':
-                            $return .= " AND MATCH({$k}) AGAINST('{$v1}')";
+                            $query->whereRaw("MATCH({$field}) AGAINST(?)", [$v1]);
                             break;
                         case 'MATCH_AGAINST_MODE':
-                            $return .= " AND MATCH({$k}) AGAINST('{$v1}' IN BOOLEAN MODE)";
+                            $query->whereRaw("MATCH({$field}) AGAINST(? IN BOOLEAN MODE)", [$v1]);
                             break;
                     }
                 }
             }
         }
-
-        return ltrim($return,' AND');
     }
 
-    public static function requestAttr($k){
+    // ======================== 上层工具方法 ========================
+    public static function requestAttr($k)
+    {
         return request()->input($k);
     }
 
-    /**
-     * 生成where条件数组
-     * @param $where
-     * @param $request
-     * @return array
-     */
-    public static function filterWhere($where){
+    public static function filterWhere($where)
+    {
         $return = [];
-        foreach ($where as $k => $v){
-            if(is_int($k)){
-                if(self::requestAttr($v) !== null && self::requestAttr($v) != ''){
+        foreach ($where as $k => $v) {
+            if (is_int($k)) {
+                if (self::requestAttr($v) !== null && self::requestAttr($v) !== '') {
                     $return[$v] = self::requestAttr($v);
                 }
-            }elseif(is_string($k)){
-                if(is_int($v)){
+            } elseif (is_string($k)) {
+                if (is_int($v)) {
                     $return[$k] = $v;
-                }elseif(is_string($v)){
-                    if(in_array(strtoupper($v), self::$whereIfFiled)){
-                        if(self::requestAttr($k) !== null && self::requestAttr($k) != ''){
+                } elseif (is_string($v)) {
+                    if (in_array(strtoupper($v), self::$whereIfFiled)) {
+                        if (self::requestAttr($k) !== null && self::requestAttr($k) !== '') {
                             $return[$k] = [$v => self::requestAttr($k)];
-                        }else{
-                            if(strpos($k,'.') !== false){
-                                $keyAlias = explode('.',$k);
-                                $return[$k] = [$v => self::requestAttr($keyAlias[1])];
-                            }
                         }
-                    }else{
-                        $v !== '' && $return[$k] = $v;
+                    } else {
+                        if ($v !== '') {
+                            $return[$k] = $v;
+                        }
                     }
-                }elseif(is_array($v)){
-                    $existsKey = self::array_key_upper_exists('OR',$v);
-                    if($existsKey !== false) {
+                } elseif (is_array($v)) {
+                    $existsKey = self::array_key_upper_exists('OR', $v);
+                    if ($existsKey !== false) {
                         $orStr = '';
-                        if(self::requestAttr($k) !== null && self::requestAttr($k) != '') {
+                        if (self::requestAttr($k) !== null && self::requestAttr($k) !== '') {
+                            $orW = self::requestAttr($k);
                             foreach ($v[$existsKey] as $orKey) {
-                                $orW = self::requestAttr($k);
                                 $orStr .= "`{$orKey}` = '{$orW}' OR ";
                             }
-                        }else{
+                        } else {
                             foreach ($v[$existsKey] as $orKey) {
                                 $orStr .= "`{$k}` = '{$orKey}' OR ";
                             }
                         }
                         $orStr = '(' . rtrim($orStr, 'OR ') . ')';
                         $return[$k] = [$existsKey => $orStr];
-                    }else{
-                        $v && $return[$k] = $v;
+                    } elseif ($v) {
+                        $return[$k] = $v;
                     }
                 }
             }
@@ -409,21 +431,34 @@ class Curd {
         return $return;
     }
 
-    public function filterCondition($filters, $conditions){
+    public function getPage($where, $assist = [])
+    {
+        $assistNew = [
+            'where'  => self::filterWhere($where),
+            'page'   => self::requestAttr('page') ?: 1,
+            'size'   => self::requestAttr('size') ?: 10,
+        ];
+        if ($assist) {
+            $assistNew = array_merge($assistNew, $assist);
+        }
+        return $this->select($assistNew);
+    }
+
+    public function filterCondition($filters, $conditions)
+    {
         $where = [];
-        //补充连表 表名.字段
-        foreach ($filters as $k => $v){
-            if(array_key_exists($k, $conditions)){
-                if($conditions[$k] !== '=' && $v !== null){
+        foreach ($filters as $k => $v) {
+            if (array_key_exists($k, $conditions)) {
+                if ($conditions[$k] !== '=' && $v !== null) {
                     $v = [$conditions[$k] => $v];
                 }
-                if(count($this->joins) > 0){
-                    if(strpos($k,'.') !== false){
+                if (count($this->joins) > 0) {
+                    if (strpos($k, '.') !== false) {
                         $where[$k] = $v;
-                    }else{
-                        $where['t0.' . $k] = $v;
+                    } else {
+                        $where[$this->alias . '.' . $k] = $v;
                     }
-                }else{
+                } else {
                     $where[$k] = $v;
                 }
             }
@@ -431,94 +466,91 @@ class Curd {
         return $where;
     }
 
-    public function filterConditionWhere($filters, $conditions){
+    public function buildWhere($where)
+    {
+        return self::filterWhere($where);
+    }
+
+    public function filterConditionWhere($filters, $conditions)
+    {
         return $this->buildParams($this->buildWhere($this->filterCondition($filters, $conditions)));
     }
 
+    public function buildParams($where)
+    {
+        $orderArr = self::requestAttr('order');
+        $order    = '';
 
-    /**
-     * 生成where条件sql
-     * @param $where
-     * @param $request
-     */
-    public function buildWhere($where){
-        return $this->where($this->filterWhere($where));
-    }
-
-    /**
-     * 构建搜索参数
-     * @param $where
-     * @return array
-     */
-    public function buildParams($where){
-        $orderArr = $this->requestAttr('order');
-        $order = '';
-        if(!$orderArr && $this->sort){
+        if (!$orderArr && $this->sort) {
             $order = $this->sort;
-        }else{
-            if($orderArr){
-                if(is_array($orderArr)){
+        } else {
+            if ($orderArr) {
+                if (is_array($orderArr)) {
                     $fieldTable = $this->buildFieldTable();
-                    foreach ($orderArr as $v){
-                        if(!$fieldTable[$v['field']]){
-                            continue;
-                        }
-                        $order .= $fieldTable[$v['field']].'.'.$v['field'].' '.str_replace('end','',$v['order']).',';
+                    foreach ($orderArr as $v) {
+                        if (empty($fieldTable[$v['field']])) continue;
+                        $order .= $fieldTable[$v['field']] . '.' . $v['field'] . ' ' . str_replace('end', '', $v['order']) . ',';
                     }
-                }else{
+                } else {
                     $order .= $orderArr;
                 }
-            }else{
-                $order .= count($this->joins) > 0 ? 't0.id DESC' : 'id DESC';
+            } else {
+                $order .= count($this->joins) > 0 ? $this->alias . '.' . $this->primaryKey . ' DESC' : $this->primaryKey . ' DESC';
             }
         }
-        $page   = $this->requestAttr('page') ?? 1;
-        $size   = $this->requestAttr('size') ?? 10;
-        $group  = $this->requestAttr('group') ?? '';
-        $export = $this->requestAttr('export') ?? 0;
-        $field  = $this->fields;
+
         return [
-           'select' => $field,
-           'where'  => $where,
-           'group'  => $group,
-           'export' => $export,
-           'order'  => rtrim($order, ','),
-           'page'   => $page,
-           'size'   => $size,
+            'select' => $this->fields,
+            'where'  => $where,
+            'group'  => self::requestAttr('group') ?? '',
+            'export' => self::requestAttr('export') ?? 0,
+            'order'  => rtrim($order, ','),
+            'page'   => self::requestAttr('page') ?? 1,
+            'size'   => self::requestAttr('size') ?? 10,
         ];
     }
 
-    /**
-     * 设置搜索字段
-     * @param $fields
-     */
-    public function fields($fields){
-        $this->fields = $fields;
-        return $this;
-    }
-
-    /**
-     * 查询key是否存在【不区分大小写】
-     * @param $key
-     * @param $array
-     * @return bool|int|string
-     */
-    public static function array_key_upper_exists($key, $array){
-        foreach ($array as $k => $v){
-            if(strtoupper($k) == strtoupper($key)){
+    public static function array_key_upper_exists($key, $array)
+    {
+        foreach ($array as $k => $v) {
+            if (strtoupper($k) == strtoupper($key)) {
                 return $k;
             }
         }
         return false;
     }
 
+    public function lock($id, $status)
+    {
+        if(is_array($id)){
+            return $this->model->whereIn($this->primaryKey, $id)->save(['status' => $status]);
+        }
+        $row = $this->model->find($id);
+        if(!$row) return false;
+        return $row->save(['status' => $status]);
+    }
+
+        // 新增重置方法
+    public function reset()
+    {
+        $this->joins = [];
+        $this->withRelations = [];
+        $this->fields = '*';
+        $this->sort = '';
+        $this->queryCallbacks = [];
+        $this->alias = 't0';
+        return $this;
+    }
+
     /**
-     * 禁用|锁定
-     * @param $id
-     * @param $status
-     * @return mixed
+     * 魔术方法：转发所有不存在的方法到查询构造器
+     * 示例 ->where() ->whereIn() ->scope() ->order() 等TP原生查询方法
      */
-    public function lock($id, $status){
-        return $this->model->find($id)->save(['status' => $status]);
+    public function __call(string $method, array $args): self
+    {
+        $this->queryCallbacks[] = function (Query $query) use ($method, $args) {
+            $query->$method(...$args);
+        };
+        return $this;
     }
 }

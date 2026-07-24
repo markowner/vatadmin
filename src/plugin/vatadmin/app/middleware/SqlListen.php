@@ -19,6 +19,10 @@ class SqlListen implements MiddlewareInterface
         $displayType = config('plugin.vat.vatadmin.app.sql.display_type', 10);
         if($debug && !self::$isListened){
             Db::listen(function($sql, $runtime) use($displayType){
+                //过滤一些不需要记录的sql 例如：SELECT 1 AS ping
+                if(strpos($sql, 'SELECT 1 AS ping') !== false){
+                    return;
+                }
                 if($displayType == 10){
                     Log::info($sql, ['runtime' => $runtime]);   
                 }elseif($displayType == 20){
