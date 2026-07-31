@@ -1,8 +1,8 @@
 <template>
-  <VatModal v-model="state.editDialogVisible" :title="state.type === 'add' ? '添加' : '编辑'" :width="props.width">
-    <VatForm ref="vatForm" :list="formList" :rules="rules" v-model="state.data"></VatForm>
+  <VatModal v-model="state.editDialogVisible" :title="state.typeTextMap[state.type]" :width="props.width">
+    <VatForm ref="vatForm" :list="formList" :rules="rules" :disabled="state.type === 'detail'" v-model="state.data"></VatForm>
     <template #action>
-      <n-flex justify="end">
+      <n-flex justify="end" v-if="state.type != 'detail'">
         <n-space>
           <n-button type="tertiary" @click="reset()">重置</n-button>
           <n-button type="tertiary" @click="hide()">取消</n-button>
@@ -52,6 +52,8 @@ const {formList, rules} = tools.pages.buildDynamicForm(formJson, originRules, to
 const state = reactive({
   //类型 add | edit
   type: 'add',
+  //类型文本映射
+  typeTextMap: {'add': '添加', 'edit': '编辑', 'detail': '详情'},
   //加载
   loading: false,
   //表单绑定值
@@ -83,6 +85,27 @@ const emits = defineEmits(['update:modelValue', 'change', 'submit'])
 function type(type){
   state.type = type
   return this
+}
+
+/**
+ * 请求数据
+ * @param type
+ */
+function loadData(id){
+  if(state.loading){
+    return
+  }
+  state.loading = true
+  if(pageJsonData.api_list?.detail){
+    Request.request(pageJsonData.api_list.detail, {id}).then(res => {
+      state.data = tools.pages.mergeObjects(state.data, res.data)
+      state.cloneSource = JSON.parse(JSON.stringify(state.data))
+    }).catch(err => {
+      console.log(err)
+    }).finally(() => {
+      state.loading = false
+    })
+  }
 }
 
 /**
@@ -125,6 +148,16 @@ function injectData(row){
   state.data = tools.pages.mergeObjects(state.data, row)
   state.cloneSource = JSON.parse(JSON.stringify(state.data))
   return this
+}
+/**
+ * 获取提交链接
+ */
+function getSubmitUrl(){
+  let url = pageJsonData.api_list.edit
+  if(state.type === 'add' && pageJsonData.api_list?.add){
+    url = pageJsonData.api_list.add
+  }
+  return url
 }
 
 /**

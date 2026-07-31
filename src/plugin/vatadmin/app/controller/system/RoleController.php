@@ -6,6 +6,7 @@ namespace plugin\vatadmin\app\controller\system;
 use plugin\vatadmin\app\model\admin\AdminRole;
 use plugin\vatadmin\app\model\admin\AdminRoleMenu;
 use plugin\vatadmin\app\controller\BaseController;
+use plugin\vatadmin\service\tools\CrudContext;
 use support\Container;
 use support\Request;
 use Tinywan\ExceptionHandler\Exception\ServerErrorHttpException;
@@ -40,19 +41,20 @@ class RoleController extends BaseController{
         return $this->error('设置失败');
     }
 
-    public function before($type, $ids, $model = null){
-        if($type === 'delete'){
-            if(in_array(1, $ids)){
-                throw new ServerErrorHttpException('默认角色不能删除');
-            }
+    protected function beforeDelete(CrudContext $ctx): void
+    {
+        if(in_array(1, $ctx->input['ids'])){
+            $ctx->stop('默认角色不能删除');
+            // throw new ServerErrorHttpException('默认角色不能删除');
         }
     }
 
-    public function after($type, $ids, $model = null){
-        if($type === 'delete'){
-            //删除角色菜单关联数据
-            AdminRoleMenu::whereIn('role_id', $ids)->delete();
-        }
+
+    protected function afterDelete(CrudContext $ctx): void
+    {
+        $ids = $ctx->input['ids'];
+        //删除角色菜单关联数据
+        AdminRoleMenu::whereIn('role_id', $ids)->delete();
     }
 }
 

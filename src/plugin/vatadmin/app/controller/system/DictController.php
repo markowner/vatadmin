@@ -7,6 +7,8 @@ use plugin\vatadmin\app\model\admin\AdminDict;
 use plugin\vatadmin\app\controller\BaseController;
 use support\Container;
 use support\Request;
+use plugin\vatadmin\service\tools\CrudContext;
+
 
 /**
  * @property \plugin\vatadmin\app\model\admin\AdminDict $model
@@ -22,19 +24,29 @@ class DictController extends BaseController{
         $row['value'] = $row['value'] ? json_decode($row['value'], true) : [];
     }
 
-    public function before($type, &$data, $model = null)
-    {
-        if($type === 'edit' && is_array($data['value'])){
-            foreach ($data['value'] as $k => &$v) {
+    protected function beforeAdd(CrudContext $ctx) :void{
+        $this->addEditHandle($ctx);
+    }
+
+    protected function beforeEdit(CrudContext $ctx) :void{
+        $this->addEditHandle($ctx);
+    }
+
+    /**
+     * 新增/编辑 公共处理
+     */
+    public function addEditHandle(CrudContext $ctx){
+        if(is_array($ctx->input['value'])){
+            foreach ($ctx->input['value'] as $k => &$v) {
                 if (is_numeric($v['value'])) {
                     $v['value'] = (int)$v['value'];
                 }
             }
-            $data['value'] = json_encode($data['value'], JSON_UNESCAPED_UNICODE);
+            $ctx->input['value'] = json_encode($ctx->input['value'], JSON_UNESCAPED_UNICODE);
         }
     }
 
-    public function after($type, $model){
+    protected function after(CrudContext $ctx) :void{
         AdminDict::refreshCache();
     }
 }

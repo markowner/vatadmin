@@ -27,90 +27,18 @@
   //构建数据列
   let column = tools.pages.buildColumns(pageJsonData)
 
-  /**
-   * 操作列
-   * @param row
-   * @param index
-   * @returns {*[]}
-   */
-  function handleColumn(row, index) {
-    let columns = []
-    if (pageJsonData.tools.edit.show  && tools.data.get('Vat-Views').includes(pageJsonData.tools.edit.permission_key)) {
-      columns.push(
-          h(NButton,
-              {
-                size: 'tiny',
-                type: 'primary',
-                secondary: true,
-                onClick: () => {
-                  editForm.value.type('edit').injectData(row).show()
-                }
-              },
-              {default: () => '编辑'}
-          )
-      )
-    }
-    if (pageJsonData.tools.delete.show && tools.data.get('Vat-Views').includes(pageJsonData.tools.delete.permission_key)) {
-      columns.push(
-          h(NButton,
-              {
-                size: 'tiny',
-                type: 'error',
-                secondary: true,
-                onClick: () => {
-                  tools.notice.dialog.warning({
-                    title: '警告',
-                    content: '你确定要删除此数据吗？',
-                    positiveText: '确定',
-                    negativeText: '取消',
-                    onPositiveClick: () => {
-                      Request.request(pageJsonData.api_list.delete, {ids: row.id}).then(res => {
-                        tools.notice.message.success(res.msg)
-                        vPage.value.refresh()
-                      }).catch(err => {
-                        console.log(err)
-                      })
-                    },
-                    onNegativeClick: () => {
-
-                    }
-                  })
-                }
-              },
-              {default: () => '删除'}
-          )
-      )
-    }
-    //更多操作
-    if (pageJsonData.setting?.rowHandle) {
-      //过滤权限操作
-      let rowHandle = pageJsonData.setting?.rowHandle.filter(item => tools.data.get('Vat-Views').includes(item?.permission_key))
-      if(rowHandle.length > 0){
-        columns.push(
-          h(NDropdown,
-            {
-              trigger: 'hover',
-              placement: 'bottom-start',
-              options: rowHandle,
-              onSelect: (key, option) => {
-                rowHandleChange(key, option)
-              }
-            },
-            {default: () => h(NButton, {size: 'tiny'}, () => h('i', {class: 'ifont i-more'}))}
-          )
-        )
-      }
-    }
-    return columns
-  }
-
   column.handle = {
     title: '操作',
     key: 'handle',
     width: 100,
     fixed: 'right',
     render: (row, index) => {
-      const defaultColumn = handleColumn(row, index)
+      const defaultColumn = tools.pages.handleColumn(pageJsonData, row, index, editForm, vPage, {
+        //editCallback, detailCallback, deleteCallback, 
+        rowHandleCallback: (key, event) => {
+          rowHandleChange(event.key, event.option, event.row, event.index)
+        }
+      })
       return h('div', {class: 'flex gap'}, {
         default: () => {
           return [...defaultColumn]
@@ -162,8 +90,8 @@
    * 行更多操作选择事件
    * 后续操作自定义处理
    */
-  function rowHandleChange(key, option){
-    console.log(key, option)
+  function rowHandleChange(key, option, row, index){
+    console.log(key, option, row, index)
   }
 
   /**

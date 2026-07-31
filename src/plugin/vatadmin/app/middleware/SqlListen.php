@@ -26,7 +26,7 @@ class SqlListen implements MiddlewareInterface
                 if($displayType == 10){
                     Log::info($sql, ['runtime' => $runtime]);   
                 }elseif($displayType == 20){
-                    echo $sql . PHP_EOL;
+                    echo $sql . PHP_EOL . '[runtime: ' . $runtime . 'ms]' . PHP_EOL;
                 }elseif($displayType == 100){
                     $callback = config('plugin.vat.vatadmin.app.sql.callback');
                     if(is_callable($callback)){

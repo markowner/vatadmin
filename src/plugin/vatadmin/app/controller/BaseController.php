@@ -20,6 +20,7 @@ use Tinywan\Jwt\JwtToken;
 use Illuminate\Support\Collection;
 use plugin\vatadmin\service\tools\Enum;
 use Vat\Validate;
+use plugin\vatadmin\service\tools\CrudContext;
 
 class BaseController{
 
@@ -36,9 +37,8 @@ class BaseController{
      * 注入额外的查询条件
      * 子类可重写此方法添加自定义查询条件
      * @param array $where 查询条件数组，通过引用传递
-     * @return void
      */
-    protected function injectWhere(array &$where): void
+    protected function injectWhere(array &$where)
     {
         // 默认空实现，子类可重写
     }
@@ -47,9 +47,8 @@ class BaseController{
      * 注入额外的查询参数
      * 子类可重写此方法修改查询参数（如排序、分组等）
      * @param array $params 查询参数数组，通过引用传递
-     * @return void
      */
-    protected function injectSelectParams(array &$params): void
+    protected function injectSelectParams(array &$params)
     {
         // 默认空实现，子类可重写
     }
@@ -57,9 +56,8 @@ class BaseController{
     /**
      * 执行数据映射前的准备工作
      * 子类可重写此方法在数据映射前执行自定义逻辑
-     * @return void
      */
-    protected function injectMap(): void
+    protected function injectMap()
     {
         // 默认空实现，子类可重写
     }
@@ -68,9 +66,8 @@ class BaseController{
      * 为单行数据注入额外属性
      * 子类可重写此方法为每行数据添加自定义字段
      * @param array $row 单行数据，通过引用传递
-     * @return void
      */
-    protected function injectAttr(array &$row): void
+    protected function injectAttr(array &$row)
     {
         // 默认空实现，子类可重写
     }
@@ -79,37 +76,10 @@ class BaseController{
      * 构建树形结构数据
      * 子类可重写此方法自定义树形结构的构建逻辑
      * @param array $rows 数据列表，通过引用传递
-     * @return void
      */
-    protected function buildTree(array &$rows): void
+    protected function buildTree(array &$rows)
     {
         $rows = tree($rows, 0, $this->treeField);
-    }
-
-    /**
-     * 数据操作前的钩子方法
-     * 子类可重写此方法在操作前执行自定义逻辑（如数据验证、权限检查）
-     * @param string $type 操作类型：edit、delete、lock 等
-     * @param mixed $data 操作数据，通过引用传递可修改
-     * @param mixed $model 模型实例（可选）
-     * @return void
-     */
-    protected function before(string $type, &$data, $model = null): void
-    {
-        // 默认空实现，子类可重写
-    }
-
-    /**
-     * 数据操作后的钩子方法
-     * 子类可重写此方法在操作后执行自定义逻辑（如日志记录、缓存更新）
-     * @param string $type 操作类型：edit、delete、lock 等
-     * @param mixed $data 操作数据
-     * @param mixed $model 模型实例（可选）
-     * @return void
-     */
-    protected function after(string $type, $data, $model = null): void
-    {
-        // 默认空实现，子类可重写
     }
 
     /**
@@ -123,6 +93,58 @@ class BaseController{
     {
         // 默认空实现，子类可重写
     }
+
+    /**
+     * 统一前置钩子：负责通用逻辑，并自动分发到细分钩子
+     * 子类可重写此方法实现所有操作前的通用逻辑（如日志、权限校验）
+     */
+    protected function beforeHook(CrudContext $ctx): void
+    {
+        // 自动分发到细分钩子，如 beforeAdd / beforeEdit 等
+        $method = 'before' . ucfirst($ctx->action);
+        if (method_exists($this, $method)) {
+            $this->$method($ctx);
+        }
+        
+        // 3. 通用前置钩子
+        if (method_exists($this, 'before')) {
+            $this->before($ctx);
+        }
+    }
+
+    /**
+     * 统一后置钩子：负责通用逻辑，并自动分发到细分钩子
+     * 子类可重写此方法实现所有操作后的通用逻辑（如缓存清理、消息通知）
+     */
+    protected function afterHook(CrudContext $ctx): void
+    {
+        // 自动分发到细分钩子，如 afterAdd / afterEdit 等
+        $method = 'after' . ucfirst($ctx->action);
+        if (method_exists($this, $method)) {
+            $this->$method($ctx);
+        }
+
+        // 3. 通用后置钩子
+        if (method_exists($this, 'after')) {
+            $this->after($ctx);
+        }
+    }
+
+    // ==================== 细分前置钩子（子类按需重写） ====================
+
+    protected function beforeAdd(CrudContext $ctx): void {}
+    protected function beforeEdit(CrudContext $ctx): void {}
+    protected function beforeDelete(CrudContext $ctx): void {}
+    protected function beforeLock(CrudContext $ctx): void {}
+    protected function beforeDetail(CrudContext $ctx): void {}
+
+    // ==================== 细分后置钩子（子类按需重写） ====================
+
+    protected function afterAdd(CrudContext $ctx): void {}
+    protected function afterEdit(CrudContext $ctx): void {}
+    protected function afterDelete(CrudContext $ctx): void {}
+    protected function afterLock(CrudContext $ctx): void {}
+    protected function afterDetail(CrudContext $ctx): void {}
 
     /**
      * 成功返回格式
@@ -161,7 +183,6 @@ class BaseController{
         $params = $curd->buildParams($curd->buildWhere($where));
         $this->injectSelectParams($params);
         $rows = $curd->select($params);
-//        $rows = $curd->select($curd->filterConditionWhere($filter, $this->buildCondition()));
         $fieldDict = $this->buildDict();
         $this->injectMap();
         foreach ($rows['list'] as $k => &$row){
@@ -174,7 +195,7 @@ class BaseController{
     }
 
     /**
-     * 列表
+     * 列表（树形）
      * @param Request $request
      */
     public function listTree(Request $request){
@@ -194,7 +215,7 @@ class BaseController{
     }
 
     /**
-     * 列表
+     * 列表（所有者）
      * @param Request $request
      */
     public function listOwner(Request $request){
@@ -222,9 +243,8 @@ class BaseController{
      * 注入数据所有者限制条件
      * 子类可重写此方法限制查询结果为当前用户所有
      * @param array $where 查询条件数组，通过引用传递
-     * @return void
      */
-    protected function injectOwner(array &$where): void
+    protected function injectOwner(array &$where)
     {
         $where['admin_id'] = JwtToken::getCurrentId();
     }
@@ -282,6 +302,10 @@ class BaseController{
         return $this->ok('success', ['list' => $list]);
     }
 
+    public function getPrimaryKey(){
+        return 'id';
+    }
+
     /**
      * 禁用解锁
      * @param Request $request
@@ -292,45 +316,127 @@ class BaseController{
         if(!$ids){
             return $this->error('参数错误');
         }
-        $model = $this->model->whereIn('id', $ids);
-        $data = ['ids' => $ids, 'status' => $status];
-        $this->before('lock', $data, $model);
-        $rs = $model->save(['status' => $status]);
+
+        $input = ['ids' => $ids, 'status' => $status];
+        $ctx = new CrudContext('lock', $input, null);
+        $this->beforeHook($ctx);
+        if ($ctx->abort) {
+            return $this->error($ctx->abortMsg);
+        }
+
+        $ids = $ctx->input['ids'] ?? $ids;
+        $status = $ctx->input['status'] ?? $status;
+
+        $builder = $this->model->whereIn($this->getPrimaryKey(), $ids);
+        $rs = $builder->save(['status' => $status]);
+
+        $ctx->result = $rs;
+        $this->afterHook($ctx);
+
         if($rs !== false){
-            $this->after('lock', $data, $model);
             return $this->ok('操作成功');
         }
         return $this->error('操作失败');
     }
 
     /**
-     * 添加编辑
+     * 添加
      * @param Request $request
      */
-    public function edit(Request $request){
+    public function add(Request $request){
         $data = $request->post();
         $this->initPage();
-        $rules = $this->buildValidate();
+        $rules = $this->buildValidate('add', $data);
         if(!isset($this->pageInfo['tpl_json']['setting']['edit_validate']) || $this->pageInfo['tpl_json']['setting']['edit_validate']){
             $this->rules($rules, $data);
             $this->validate($rules);
         }
 
-        $this->before('edit', $data, $this->model);
-        if($data['id']) {
-            //编辑
-            $model = $this->model->find($data['id']);
-            $model && $rs = $model->save($data);
-        } else {
-            //添加
-            $model = $rs = $this->model->create($data);
+        $ctx = new CrudContext('add', $data, null);
+        $this->beforeHook($ctx);
+        if ($ctx->abort) {
+            return $this->error($ctx->abortMsg);
         }
-        if($rs) {
-            $this->after('edit', null, $model);
+
+        $model = $this->model->create($ctx->input);
+        
+        if($model) {
+            $ctx->result = $model;
+            $ctx->model = $model;
+            $this->afterHook($ctx);
             return $this->ok('保存成功');
         }
 
         return $this->error('保存失败');
+    }
+
+    /**
+     * 编辑
+     * @param Request $request
+     */
+    public function edit(Request $request){
+        $data = $request->post();
+        $this->initPage();
+        $rules = $this->buildValidate('edit', $data);
+        if(!isset($this->pageInfo['tpl_json']['setting']['edit_validate']) || $this->pageInfo['tpl_json']['setting']['edit_validate']){
+            $this->rules($rules, $data);
+            $this->validate($rules);
+        }
+
+        $primaryKey = $this->getPrimaryKey();
+        //兼容以前添加编辑公用模式
+        if($data[$primaryKey]){
+            $model = $this->model->find($data[$primaryKey]);
+            if(!$model) {
+                return $this->error('数据错误');
+            } 
+            $ctx = new CrudContext('edit', $data, $model);
+        }else{
+            $ctx = new CrudContext('add', $data, null);
+        }
+
+        $this->beforeHook($ctx);
+        if ($ctx->abort) {
+            return $this->error($ctx->abortMsg);
+        }
+        if($ctx->action === 'add'){
+            $rs = $this->model->create($ctx->input);
+        }else{
+            $rs = $model->save($ctx->input);
+        }
+        if(!$rs) {
+            return $this->error('保存失败');
+        }
+
+        $ctx->result = $rs;
+        $this->afterHook($ctx);
+        return $this->ok('保存成功');
+    }
+
+    /**
+     * 详情
+     * @param Request $request
+     */
+    public function detail(Request $request){
+        $id = $request->input('id');
+        $model = $this->model->find($id);
+        if(!$model) {
+            return $this->error('数据错误');
+        } 
+
+        $data = $model->toArray();
+
+        $ctx = new CrudContext('detail', $data, $model);
+        $this->beforeHook($ctx);
+        if ($ctx->abort) {
+            return $this->error($ctx->abortMsg);
+        }
+
+        $data = $ctx->input;
+        $ctx->result = $data;
+        $this->afterHook($ctx);
+
+        return $this->ok('Success', $data);
     }
 
     /**
@@ -345,11 +451,26 @@ class BaseController{
         if(!is_array($ids)){
             $ids = [$ids];
         }
-        $model = $this->model->whereIn('id', $ids);
-        $this->before('delete', $ids, $model);
-        $rs = $model->delete();
+
+        $input = ['ids' => $ids];
+        $ctx = new CrudContext('delete', $input, null);
+        $this->beforeHook($ctx);
+        if ($ctx->abort) {
+            return $this->error($ctx->abortMsg);
+        }
+
+        // 允许 beforeHook 修改 ids
+        $ids = $ctx->input['ids'] ?? $ids;
+        if (!is_array($ids)) {
+            $ids = [$ids];
+        }
+
+        $rs = $this->model->whereIn('id', $ids)->delete();
+
+        $ctx->result = $rs;
+        $this->afterHook($ctx);
+
         if($rs){
-            $this->after('delete', $ids, $model);
             return $this->ok('删除成功');
         }
         return $this->error('删除失败');
@@ -540,29 +661,108 @@ class BaseController{
     }
 
     /**
+     * 递归解析 visible_when 条件 【和前端JS逻辑完全一致】
+     * @param array|null $cond
+     * @param array $formData 提交的表单数据
+     * @return bool
+     */
+    protected function parseVisibleCondition(?array $cond, array $formData): bool
+    {
+        if (empty($cond) || count($cond) === 0) {
+            return true;
+        }
+
+        if (isset($cond['or']) && is_array($cond['or'])) {
+            foreach ($cond['or'] as $item) {
+                if ($this->parseVisibleCondition($item, $formData)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        if (isset($cond['and']) && is_array($cond['and'])) {
+            foreach ($cond['and'] as $item) {
+                if (!$this->parseVisibleCondition($item, $formData)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        $field = $cond['field'] ?? '';
+        $value = $cond['value'] ?? null;
+        $neq   = isset($cond['neq']) ? $cond['neq'] : null;
+
+        $fieldVal = $formData[$field] ?? null;
+        if ($neq !== null) {
+            return $fieldVal !== $neq;
+        }
+        return $fieldVal === $value;
+    }
+
+    /**
+     * 判断字段当前是否可视（show_in + visible_when）
+     * @param array $fieldItem 字段配置
+     * @param string $mode add/edit/detail
+     * @param array $formData 提交数据
+     * @return bool
+     */
+    protected function isFieldVisible(array $fieldItem, string $mode, array $formData): bool
+    {
+        // show_in 逻辑：空/all全部显示，逗号分隔多模式
+        $showInRaw = trim($fieldItem['show_in'] ?? '');
+        if ($showInRaw !== '' && $showInRaw !== 'all') {
+            $showArr = array_map('trim', explode(',', $showInRaw));
+            if (!in_array($mode, $showArr)) {
+                return false;
+            }
+        }
+
+        // 联动visible_when
+        if (!$this->parseVisibleCondition($fieldItem['visible_when'] ?? [], $formData)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * 构建验证规则
+     * @param string $mode
+     * @param array $postData
      * @return array
      */
-    public function buildValidate(){
+    public function buildValidate(string $mode = '', array $postData = []): array
+    {
         $validate = [];
-        foreach ($this->pageInfo['tpl_json']['fields'] as $fields){
-            if($fields['form'] && $fields['form_required']){
-                $rules = isset($fields['rules']) && $fields['rules'] ? explode('|', $fields['rules']) : ['required'];
-                if(in_array($fields['form_view'], ['input', 'input-pair', 'input_number','password', 'textarea'])){
-                    $messagePrefix = '请输入';
-                }else{
-                    $messagePrefix = '请选择';
-                }
-                $buildRules = [];
-                foreach ($rules as $rule){
-                    if($rule == 'required'){
-                        $buildRules[$rule] = $messagePrefix . $fields['comment'];
-                    }else{
-                        $buildRules[$rule] = $messagePrefix .'正确的'. $fields['comment'];
-                    }
-                }
-                $validate[$fields['field']] = $buildRules;
+        foreach ($this->pageInfo['tpl_json']['fields'] as $fields) {
+            if (!($fields['form'] && $fields['form_required'])) {
+                continue;
             }
+
+            // 如果没有传入mode，代表旧调用，暂时不做动态显隐过滤，保留原始逻辑
+            if (!empty($mode)) {
+                if (!$this->isFieldVisible($fields, $mode, $postData)) {
+                    continue;
+                }
+            }
+
+            $rules = isset($fields['rules']) && $fields['rules'] ? explode('|', $fields['rules']) : ['required'];
+            if(in_array($fields['form_view'], ['input', 'input-pair', 'input_number','password', 'textarea'])){
+                $messagePrefix = '请输入';
+            }else{
+                $messagePrefix = '请选择';
+            }
+            $buildRules = [];
+            foreach ($rules as $rule){
+                if($rule == 'required'){
+                    $buildRules[$rule] = $messagePrefix . $fields['comment'];
+                }else{
+                    $buildRules[$rule] = $messagePrefix .'正确的'. $fields['comment'];
+                }
+            }
+            $validate[$fields['field']] = $buildRules;
         }
         return $validate;
     }
@@ -574,7 +774,6 @@ class BaseController{
         Validate::setErrorHandler(BadRequestHttpException::class);
         Validate::check(request()->all(),$rules);
     }    
-
 
     public function __set($name, $value) {
         // 动态设置属性

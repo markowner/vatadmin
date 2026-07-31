@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\system;
 
+use Override;
 use plugin\vatadmin\app\controller\BaseController;
 use plugin\vatadmin\service\internal\socket\SocketClient;
+use plugin\vatadmin\service\tools\CrudContext;
 use support\Container;
 use support\Request;
 use Tinywan\Jwt\JwtToken;
@@ -20,12 +22,21 @@ class NoticeController extends BaseController{
     }
 
 
-    public function after($type, $model){
-        if($type === 'edit'){
-            if($model->type == 1){
-                //发送公告通知
-                SocketClient::sendAffiche($model->title, $model->content);
-            }
+    protected function afterAdd(CrudContext $ctx): void
+    {
+        $model = $ctx->model;
+        if($model->type == 1){
+            //发送公告通知
+            SocketClient::sendAffiche($model->title, $model->content);
+        }
+    }
+
+    protected function afterEdit(CrudContext $ctx): void
+    {
+        $model = $ctx->model;
+        if($model->type == 1){
+            //发送公告通知
+            SocketClient::sendAffiche($model->title, $model->content);
         }
     }
 
@@ -33,7 +44,7 @@ class NoticeController extends BaseController{
         if(request()->input('type')){
             $where['admin_id'] = 0;
         }else{
-            $where['admin_id'] = JwtToken::getCurrentId();
+            $where['admin_id'] = VatUid();
         }
     }
 

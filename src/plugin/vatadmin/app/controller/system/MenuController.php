@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace plugin\vatadmin\app\controller\system;
 
+use Override;
 use plugin\vatadmin\app\model\admin\AdminMenu;
 use plugin\vatadmin\app\model\admin\AdminRoleMenu;
 use plugin\vatadmin\app\controller\BaseController;
+use plugin\vatadmin\service\tools\CrudContext;
 use support\Container;
 use support\Request;
 use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
@@ -34,19 +36,19 @@ class MenuController extends BaseController{
         return $this->ok('ok', ['list' => $list, 'selected' => $selected]);
     }
 
-    public function before($type, &$ids, &$model){
-        if($type === 'delete'){
-            //获取当前id及所有子集及子孙级id
-            $ids = treeChildIds($ids, $this->model);
-            $model = $model->whereIn('id', $ids);
-        }
+    public function beforeDelete(CrudContext $ctx): void
+    {
+        //获取当前id及所有子集及子孙级id
+        $ids = treeChildIds($ctx->input['ids'], $this->model);
+        $ctx->model = $ctx->model->whereIn('id', $ids);
     }
 
-    public function after($type, $ids, $model = null){
-        if($type == 'delete'){
-            //删除角色菜单关联数据
-            AdminRoleMenu::whereIn('menu_id', $ids)->delete();
-        }
+
+    protected function afterDelete(CrudContext $ctx): void
+    {
+        $ids = $ctx->input['ids'];
+        //删除角色菜单关联数据
+        AdminRoleMenu::whereIn('menu_id', $ids)->delete();
     }
 }
 

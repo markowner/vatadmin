@@ -5,6 +5,7 @@ namespace plugin\vatadmin\app\controller\system;
 
 use plugin\vatadmin\app\controller\BaseController;
 use plugin\vatadmin\app\model\admin\AdminDepartment;
+use plugin\vatadmin\service\tools\CrudContext;
 use support\Container;
 use support\Request;
 
@@ -41,21 +42,11 @@ class DepartmentController extends BaseController
         return $this->ok('获取成功',['list' =>$list]);
     }
 
-//    public function before($type, &$data){
-//        if($type === 'edit'){
-//            if($data['parent_id']){
-//                $parentIds = explode(',', $data['parent_id']);
-//                $data['parent_id'] = end($parentIds);
-//            }
-//        }
-//    }
 
-    public function before($type, &$ids, &$model){
-        if($type === 'delete'){
-            //获取当前id及所有子集及子孙级id
-            $ids = treeChildIds($ids, $this->model);
-            $model = $model->whereIn('id', $ids);
-        }
+    protected function beforeDelete(CrudContext $ctx) :void{
+        //获取当前id及所有子集及子孙级id
+        $ids = treeChildIds($ctx->input['ids'], $this->model);
+        $ctx->model = $ctx->model->whereIn('id', $ids);
     }
 
 }

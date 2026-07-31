@@ -291,7 +291,9 @@ class PagesController extends BaseController
         //添加子菜单记录
         $subMenu = [
             ['name' => '列表', 'path' => $page->table . '_list', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'list'],
-            ['name' => '添加编辑', 'path' => $page->table . '_edit', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'edit'],
+            ['name' => '添加', 'path' => $page->table . '_add', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'add'],
+            ['name' => '编辑', 'path' => $page->table . '_edit', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'edit'],
+            ['name' => '详情', 'path' => $page->table . '_detail', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'detail'],
             ['name' => '锁定', 'path' => $page->table . '_lock', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'lock'],
             ['name' => '删除', 'path' => $page->table . '_delete', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'delete'],
             ['name' => '导入', 'path' => $page->table . '_import', 'permission_route' => DIRECTORY_SEPARATOR . $page->build_app_name . DIRECTORY_SEPARATOR . trim($page->build_controller, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'import*'],
@@ -357,7 +359,9 @@ class PagesController extends BaseController
         // 生成API列表配置
         $apiList = [
             'list' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/list', 'method' => 'get'],
+            'add' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/add', 'method' => 'post'],
             'edit' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/edit', 'method' => 'post'],
+            'detail' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/detail', 'method' => 'get'],
             'lock' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/lock', 'method' => 'post'],
             'delete' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/delete', 'method' => 'post'],
             'import' => ['url' => '/' . $apiListRoutePrefix . '/' . $buildController . '/import', 'method' => 'post'],
@@ -667,6 +671,7 @@ class PagesController extends BaseController
         return [
             'add' => ['show' => true, 'permission_key' => $table . '_add'],
             'edit' => ['show' => true, 'permission_key' => $table . '_edit'],
+            'detail' => ['show' => true, 'permission_key' => $table . '_detail'],
             'switch_lock' => ['show' => false, 'permission_key' => $table . '_switch_lock'],
             'lock' => ['show' => false, 'permission_key' => $table . '_lock'],
             'unlock' => ['show' => false, 'permission_key' => $table . '_unlock'],
