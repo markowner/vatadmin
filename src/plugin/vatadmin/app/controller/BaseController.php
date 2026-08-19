@@ -251,36 +251,36 @@ class BaseController{
 
     public function injectConfineData(&$where){
         if($this->confine === 1){
-            $where['admin_id'] = JwtToken::getCurrentId();
+            $where['admin_id'] = VatUid();
         }else if($this->confine === 2){
-            $user = JwtToken::getUser();
-            $roles = explode(',', $user['roles']);
+            $adminUser = VatUser();
+            $roles = explode(',', $adminUser['roles']);
             if(!in_array(1, $roles)){
                 //获取全部角色数据
                 $dataTypes = AdminRole::getDataTypeByIds($roles);
                 $userIds = [];
-                $adminUser = JwtToken::getUser();
                 foreach (array_unique($dataTypes) as $type){
                     switch ($type){
                         case AdminRole::DATA_TYPE_ALL:
                             return true;
                         case AdminRole::DATA_TYPE_DEPART:
                             //本部门
-                            if($adminUser->deparment_id){
-                                $users = AdminUser::getByDepartmentId($adminUser->deparment_id);
+                            if($adminUser['department_id']){
+                                $users = AdminUser::getByDepartmentId($adminUser['department_id']);
                                 $userIds = array_merge($userIds, $users);
                             }
                             break;
                         case AdminRole::DATA_TYPE_DEPART_CHILD:
                             //本部门及以下
-                            if($adminUser->deparment_id){
-                                $departmentIds = AdminDepartment::getChildIds($adminUser->deparment_id);
+                            if($adminUser['department_id']){
+                                $departmentIds = AdminDepartment::getChildIds($adminUser['department_id']);
                                 $users = AdminUser::getByDepartmentIds($departmentIds);
                                 $userIds = array_merge($userIds, $users);
                             }
+                            break;
                         case AdminRole::DATA_TYPE_SELF:
                             //自己
-                            $userIds[] = $adminUser->id;
+                            $userIds[] = $adminUser['id'];
                             break;
                         default:
                             break;

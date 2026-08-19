@@ -319,7 +319,6 @@ class PagesController extends BaseController
     /**
      * 添加
      * @param \support\Request $request
-     * @return void
      */
     public function add(Request $request){
         $table = $request->input('table');
@@ -410,7 +409,6 @@ class PagesController extends BaseController
     /**
      * 同步字段
      * @param \support\Request $request
-     * @return void
      */
     public function syncField(Request $request){
         $id = $request->input('id');

@@ -34,7 +34,7 @@
     fixed: 'right',
     render: (row, index) => {
       const defaultColumn = tools.pages.handleColumn(pageJsonData, row, index, editForm, vPage, {
-        //editCallback, detailCallback, deleteCallback, 
+        //rowHandleCallback, editCallback, detailCallback, deleteCallback, 
         rowHandleCallback: (key, event) => {
           rowHandleChange(event.key, event.option, event.row, event.index)
         }

@@ -95,8 +95,8 @@ function loadData(id){
   if(state.loading){
     return
   }
-  state.loading = true
   if(pageJsonData.api_list?.detail){
+    state.loading = true
     Request.request(pageJsonData.api_list.detail, {id}).then(res => {
       state.data = tools.pages.mergeObjects(state.data, res.data)
       state.cloneSource = JSON.parse(JSON.stringify(state.data))
