@@ -718,6 +718,7 @@ CREATE TABLE `vat_member_notice` (
 ) ENGINE=InnoDB COMMENT='会员消息通知表';
 
 -- 异步任务
+DROP TABLE IF EXISTS `vat_task_async`;
 CREATE TABLE `vat_task_async` (
   `id` int NOT NULL AUTO_INCREMENT COMMENT 'ID编号',
   `title` varchar(200) NOT NULL COMMENT '名称',

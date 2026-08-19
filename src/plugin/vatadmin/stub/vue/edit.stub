@@ -40,15 +40,6 @@ const props = defineProps({
 
 const vatForm = ref(null)
 
-/**
- * 获取表单构建JSON
- * @type {[]}
- */
-const formJson = tools.pages.buildForm(pageJsonData.fields)
-const originRules = tools.pages.buildRule(pageJsonData.fields)
-
-const {formList, rules} = tools.pages.buildDynamicForm(formJson, originRules, toRef(state, 'type'), toRef(state, 'data'))
-
 const state = reactive({
   //类型 add | edit
   type: 'add',
@@ -63,6 +54,15 @@ const state = reactive({
   //原始数据，用于重置
   cloneSource: {}
 })
+
+/**
+ * 获取表单构建JSON
+ * @type {[]}
+ */
+const formJson = tools.pages.buildForm(pageJsonData.fields)
+const originRules = tools.pages.buildRule(pageJsonData.fields)
+
+const {formList, rules} = tools.pages.buildDynamicForm(formJson, originRules, toRef(state, 'type'), toRef(state, 'data'))
 
 /**
  * 初始化表单数据
