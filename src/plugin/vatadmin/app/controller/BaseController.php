@@ -32,6 +32,7 @@ class BaseController{
     private $properties = [];
     protected $tableCode = 0; //标识,用于区分多个页面相同的表名
     protected $treeField = 'id|parent_id'; //tree字段，格式：id|parent_id
+    protected $extraDict = []; //extra字段映射，用于导出时替换值为标签
 
     /**
      * 注入额外的查询条件
@@ -70,6 +71,17 @@ class BaseController{
     protected function injectAttr(array &$row)
     {
         // 默认空实现，子类可重写
+    }
+
+    /**
+     * 列表默认返回 total 和 list，如果需要加别的返回项，可以重写此方法
+     * 但是其他项注意统一返回到 extra 字段
+     */
+    protected function injectReturn(array &$rows)
+    {
+         foreach ($this->extraDict as $field => $map){
+            $rows['extra'][$field] = $map;
+        }
     }
 
     /**
@@ -191,6 +203,7 @@ class BaseController{
             }
             $this->injectAttr($row);
         }
+        $this->injectReturn($rows);
         return $this->ok('success', $rows);
     }
 
@@ -211,7 +224,9 @@ class BaseController{
             }
         }
         $this->buildTree($rows);
-        return $this->ok('success', ['list' => $rows, 'total' => count($rows)]);
+        $returnData = ['list' => $rows, 'total' => count($rows)];
+        $this->injectReturn($returnData);
+        return $this->ok('success', $returnData);
     }
 
     /**
@@ -236,6 +251,7 @@ class BaseController{
             }
             $this->injectAttr($row);
         }
+        $this->injectReturn($rows);
         return $this->ok('success', $rows);
     }
 
@@ -541,6 +557,7 @@ class BaseController{
             $rows = $curd->fetch($params);
             $fieldDict = $this->buildDict();
             $this->injectMap();
+            $fieldDict = array_merge($fieldDict, $this->extraDict);
 
             $heading = [];
             foreach ($this->pageInfo['tpl_json']['fields'] as $fields){
@@ -550,7 +567,7 @@ class BaseController{
             foreach ($rows as $k => &$row){
                 foreach ($fieldDict as $field => $dict){
                     if($row[$field] !== '' && $row[$field] !== null){
-                        $row[$field.'_desc'] = $dict[$row[$field]];
+                        $row[$field.'_desc'] = $dict[$row[$field]] ?? '';
                         if(!isset($heading[$field.'_desc'])){
                             $heading[$field.'_desc'] = $heading[$field];
                             unset($heading[$field]);

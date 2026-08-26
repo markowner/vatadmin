@@ -523,7 +523,7 @@ class PagesController extends BaseController
             $config['condition'] = 'like';
         }
 
-        if (preg_match('/^(type|status)|(type|status)$/', $field['name'])) {
+        if (preg_match('/^(type|status|state)|(type|status|state)$/', $field['name'])) {
             $config['search_view'] = 'select';
             $config['form_view'] = 'select';
         }
@@ -670,7 +670,7 @@ class PagesController extends BaseController
             'add' => ['show' => true, 'permission_key' => $table . '_add'],
             'edit' => ['show' => true, 'permission_key' => $table . '_edit'],
             'detail' => ['show' => true, 'permission_key' => $table . '_detail'],
-            'switch_lock' => ['show' => false, 'permission_key' => $table . '_switch_lock'],
+            'switch_lock' => ['show' => true, 'permission_key' => $table . '_switch_lock'],
             'lock' => ['show' => false, 'permission_key' => $table . '_lock'],
             'unlock' => ['show' => false, 'permission_key' => $table . '_unlock'],
             'delete' => ['show' => false, 'permission_key' => $table . '_delete'],

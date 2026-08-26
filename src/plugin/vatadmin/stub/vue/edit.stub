@@ -19,7 +19,9 @@ import Request from '@/utils/axios'
 import VatForm from "@/components/VatForm.vue"
 import VatModal from "@/components/VatModal.vue"
 import pageJsonData from "@/vat/pages/{#page_name#}.json"
+import { useStore } from '@/store'
 
+const store = useStore()
 const tools = inject('tools')
 const props = defineProps({
   /**
@@ -59,7 +61,7 @@ const state = reactive({
  * 获取表单构建JSON
  * @type {[]}
  */
-const formJson = tools.pages.buildForm(pageJsonData.fields)
+const formJson = reactive(tools.pages.buildForm(pageJsonData.fields))
 const originRules = tools.pages.buildRule(pageJsonData.fields)
 
 const {formList, rules} = tools.pages.buildDynamicForm(formJson, originRules, toRef(state, 'type'), toRef(state, 'data'))
@@ -112,6 +114,7 @@ function loadData(id){
  * 展示
  */
 function show(){
+  fillOptionsFromExtra()
   state.editDialogVisible = true
   emits('update:modelValue', true)
   emits('change', true)
@@ -149,6 +152,34 @@ function injectData(row){
   state.cloneSource = JSON.parse(JSON.stringify(state.data))
   return this
 }
+
+/**
+ * 从 store extra 填充表单字段选项
+ * extra 格式: {field: {key: value}}
+ * 转换为 select options 格式: [{label, value}]
+ * 自动匹配表单数据类型，解决字符串/数字不匹配问题
+ */
+function fillOptionsFromExtra(){
+  const extra = store.extra
+  if(!extra) return
+  formJson.forEach(field => {
+    if(extra[field.field]){
+      const formVal = state.data[field.field]
+      const useNumber = typeof formVal === 'number'
+      const options = Object.entries(extra[field.field]).map(([value, label]) => ({
+        label,
+        value: useNumber ? Number(value) : value
+      }))
+      // 当前值不在选项中，补充占位项避免显示原始值
+      const currentVal = useNumber ? Number(formVal) : formVal
+      if(currentVal !== '' && currentVal !== null && currentVal !== undefined && !options.some(opt => opt.value === currentVal)){
+        options.unshift({label: '请选择...', value: currentVal, disabled: true})
+      }
+      field.config.options = options
+    }
+  })
+}
+
 /**
  * 获取提交链接
  */
@@ -202,6 +233,7 @@ watch(() => state.editDialogVisible, (val) => {
 
 defineExpose({
   injectData,
+  loadData,
   type,
   show,
   hide,

@@ -7,6 +7,7 @@
       :columns="state.pageJson.columns"
       :tools="state.pageJson.tools"
       :settings="state.pageJson.settings"
+      @extra="extraChange"
       @toolsChange="toolsChange">
   </VatPage>
   <!-- 添加编辑 -->
@@ -19,7 +20,9 @@
   import VatPage from "@/components/VatPage.vue"
   import Edit from "./edit.vue"
   import pageJsonData from '@/vat/pages/{#page_name#}.json'
+  import { useStore } from '@/store'
 
+  const store = useStore()
   const tools = inject('tools')
   const vPage = ref(null)
   const editForm = ref(null)
@@ -75,7 +78,7 @@
         break;
       case 'download':
         pageJsonData.api_list.download.url += event
-        Request.request(pageJsonData.api_list.download, {filter: JSON.stringify(vPage.value.state.params)}).then(res => {
+        Request.request(pageJsonData.api_list.download, {filter: JSON.stringify(vPage.value.state.params)}, {responseType: 'blob'}).then(res => {
           tools.notice.message.success(res.msg)
         }).catch(err => {
           console.log(err)
@@ -84,6 +87,13 @@
       default:
         break;
     }
+  }
+
+  /**
+   * 扩展信息
+   */
+  function extraChange(data){
+    store.setExtra(data)
   }
 
   /**

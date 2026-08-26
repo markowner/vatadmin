@@ -38,7 +38,9 @@ class DownloadRealize extends BaseRealize{
         $calledClass = $data['calledClass'];
         $controller = $data['this'];
         $fieldDict = $controller->buildDict();
-        method_exists($calledClass, 'injectMap') && $controller->injectMap();
+        $controller->injectMap();
+        $fieldDict = array_merge($fieldDict, $controller->extraDict);
+        
         $heading = [];
         foreach ($controller->pageInfo['tpl_json']['fields'] as $fields){
             $heading[$fields['field']] = $fields['comment'];
@@ -47,7 +49,7 @@ class DownloadRealize extends BaseRealize{
         foreach ($rows as $k => &$row){
             foreach ($fieldDict as $field => $dict){
                 if($row[$field] !== '' && $row[$field] !== null){
-                    $row[$field.'_desc'] = $dict[$row[$field]];
+                    $row[$field.'_desc'] = $dict[$row[$field]] ?? '';
                     if(!isset($heading[$field.'_desc'])){
                         $heading[$field.'_desc'] = $heading[$field];
                         unset($heading[$field]);
