@@ -29,7 +29,7 @@ class MemberActionLog extends Model
      *
      * @var string|null
      */
-    protected $connection = 'mysql';
+    protected $connection = null;
 
     /**
      * The table associated with the model.

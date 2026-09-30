@@ -7,6 +7,7 @@ use plugin\vatadmin\app\controller\BaseController;
 use plugin\vatadmin\app\model\admin\AdminDict;
 use plugin\vatadmin\app\model\admin\AdminMenu;
 use plugin\vatadmin\app\model\Pages;
+use plugin\vatadmin\service\tools\DatabaseAdapter;
 use plugin\vatadmin\service\tools\Util;
 use support\Container;
 use support\Request;
@@ -163,12 +164,8 @@ class PagesController extends BaseController
 
         //获取字段信息
         $db = Db::connect();
-        $tableComment = $db->query("SELECT TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?", [$page['table']]);
-        if (!empty($tableComment)) {
-            $comment = $tableComment[0]['TABLE_COMMENT'];
-        } else {
-            $comment = '';
-        }
+        $tableComment = DatabaseAdapter::getInstance()->getTableComment($page['table']);
+        $comment = $tableComment;
         $tableFields = $db->getFields($page['table']);
         $build_model_field = ' * ' . $comment."\n";
         foreach ($tableFields as $k => $field) {
@@ -327,8 +324,7 @@ class PagesController extends BaseController
         }
      
         $db = Db::connect();
-        $tableComment = $db->query("SELECT TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?", [$table]);
-        $comment = $tableComment[0]['TABLE_COMMENT'] ?? '';
+        $comment = DatabaseAdapter::getInstance()->getTableComment($table);
 
         $tableFields = $db->getFields($table);
         $fields = $this->generateFieldConfigs($tableFields);
@@ -422,8 +418,7 @@ class PagesController extends BaseController
         $table = $pages->table;
 
         $db = Db::connect();
-        $tableComment = $db->query("SELECT TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?", [$table]);
-        $comment = $tableComment[0]['TABLE_COMMENT'] ?? '';
+        $comment = DatabaseAdapter::getInstance()->getTableComment($table);
 
         $tableFields = $db->getFields($table);
         $fields = $this->generateFieldConfigs($tableFields);

@@ -338,10 +338,12 @@ class CurdOld {
                             $return .= " AND {$k} IS NOT NULL";
                             break;
                         case 'MATCH_AGAINST':
-                            $return .= " AND MATCH({$k}) AGAINST('{$v1}')";
+                            [$ftsSql, $ftsBindings] = DatabaseAdapter::getInstance()->buildFullTextSearch($k, $v1, false);
+                            $return .= " AND " . $ftsSql;
                             break;
                         case 'MATCH_AGAINST_MODE':
-                            $return .= " AND MATCH({$k}) AGAINST('{$v1}' IN BOOLEAN MODE)";
+                            [$ftsSql, $ftsBindings] = DatabaseAdapter::getInstance()->buildFullTextSearch($k, $v1, true);
+                            $return .= " AND " . $ftsSql;
                             break;
                     }
                 }

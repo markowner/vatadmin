@@ -9,6 +9,7 @@ namespace plugin\vatadmin\service\tools;
 
 use think\db\Query;
 use think\Model;
+use plugin\vatadmin\service\tools\DatabaseAdapter;
 
 class Curd
 {
@@ -368,10 +369,12 @@ class Curd
                             $query->whereNotNull($field);
                             break;
                         case 'MATCH_AGAINST':
-                            $query->whereRaw("MATCH({$field}) AGAINST(?)", [$v1]);
+                            [$ftsSql, $ftsBindings] = DatabaseAdapter::getInstance()->buildFullTextSearch($field, $v1, false);
+                            $query->whereRaw($ftsSql, $ftsBindings);
                             break;
                         case 'MATCH_AGAINST_MODE':
-                            $query->whereRaw("MATCH({$field}) AGAINST(? IN BOOLEAN MODE)", [$v1]);
+                            [$ftsSql, $ftsBindings] = DatabaseAdapter::getInstance()->buildFullTextSearch($field, $v1, true);
+                            $query->whereRaw($ftsSql, $ftsBindings);
                             break;
                     }
                 }

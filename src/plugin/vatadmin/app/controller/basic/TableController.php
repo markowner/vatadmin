@@ -5,6 +5,7 @@ namespace plugin\vatadmin\app\controller\basic;
 
 use plugin\vatadmin\app\controller\BaseController;
 use plugin\vatadmin\app\model\Pages;
+use plugin\vatadmin\service\tools\DatabaseAdapter;
 use plugin\vatadmin\service\tools\Util;
 use support\Request;
 use think\facade\Db;
@@ -22,12 +23,7 @@ class TableController extends BaseController
         $list = [];
         $pageTables = Pages::getPagesTables();
         foreach ($tables as $table) {
-            $tableComment = $db->query("SELECT TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?", [$table]);
-            if (!empty($tableComment)) {
-                $comment = $tableComment[0]['TABLE_COMMENT'];
-            } else {
-                $comment = '';
-            }
+            $comment = DatabaseAdapter::getInstance()->getTableComment($table);
             $column = $db->getFields($table);
             $list[] = [
                 'table' => $table,

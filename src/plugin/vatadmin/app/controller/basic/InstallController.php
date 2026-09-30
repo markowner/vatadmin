@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace plugin\vatadmin\app\controller\basic;
 
 use plugin\vatadmin\app\controller\BaseController;
+use plugin\vatadmin\service\tools\DatabaseAdapter;
 use support\Request;
 
 class InstallController extends BaseController
@@ -33,21 +34,40 @@ class InstallController extends BaseController
             return $this->error('管理后台已经安装！如需重新安装，请删除根目录env配置文件并重启');
         }
 
+        // 数据库类型，默认 mysql，支持 pgsql
+        $dbType = $data['type'] ?? 'mysql';
+        if (!in_array($dbType, ['mysql', 'pgsql'])) {
+            return $this->error('不支持的数据库类型，仅支持 mysql 和 pgsql');
+        }
+
+        // 初始化适配器
+        $adapter = new DatabaseAdapter($dbType);
+
+        // 设置默认值
+        $data['charset'] = $data['charset'] ?? $adapter->getDefaultCharset();
+        $data['collate'] = $data['collate'] ?? $adapter->getDefaultCollate();
+        $data['port'] = $data['port'] ?? $adapter->getDefaultPort();
+
         try {
-            $data['charset'] = $data['charset'] ?? 'utf8mb4';
-            $data['collate'] = $data['collate'] ?? 'utf8mb4_general_ci';
-            $db = $this->getPdo($data['host'], $data['user'], $data['password'], $data['port'], $data['charset']);
+            $db = $this->getPdo($adapter, $data['host'], $data['user'], $data['password'], (int)$data['port'], $data['charset']);
          
-            $stmt = $db->query("show databases like '{$data['database']}'");
-            if (empty($stmt->fetchAll())) {
-                $stmt = $db->exec("create database {$data['database']} CHARSET utf8mb4 COLLATE {$data['collate']}");
-                $stmt = $db->exec("use {$data['database']}");
+            // 检查数据库是否存在
+            if (!$adapter->checkDatabaseExists($db, $data['database'])) {
+                $adapter->createDatabase($db, $data['database'], $data['charset'], $data['collate']);
+                // 重新连接已创建的数据库
+                $db = $this->getPdo($adapter, $data['host'], $data['user'], $data['password'], (int)$data['port'], $data['charset'], $data['database']);
             } else {
-                $stmt = $db->exec("use {$data['database']}");
+                // 切换到目标数据库
+                if ($adapter->isMysql()) {
+                    $db->exec("USE \"{$data['database']}\"");
+                } else {
+                    // PostgreSQL 需要重新连接
+                    $db = $this->getPdo($adapter, $data['host'], $data['user'], $data['password'], (int)$data['port'], $data['charset'], $data['database']);
+                }
             }
         } catch (\Throwable $e) {
             $message = $e->getMessage();
-            if (stripos($message, 'Access denied for user')) {
+            if (stripos($message, 'Access denied for user') || stripos($message, 'password')) {
                 return $this->error('数据库用户名或密码错误');
             }
             if (stripos($message, 'Connection refused')) {
@@ -59,15 +79,15 @@ class InstallController extends BaseController
             throw $e;
         }
 
-        $stmt = $db->query("show tables like 'vat_admin_user'");
-        $tables = $stmt->fetchAll();
-        if (count($tables) > 0) {
+        // 检查表是否已存在
+        if ($adapter->checkTableExists($db, 'vat_admin_user')) {
             return $this->error('数据库已经安装，请勿重复安装');
         }
 
-        $sql_file = base_path() . '/plugin/vatadmin/db/vatadmin-1.0.sql';
+        // 获取对应数据库类型的 SQL 文件
+        $sql_file = $adapter->getInitSqlFilePath();
         if (!is_file($sql_file)) {
-            return $this->error('数据库SQL文件不存在');
+            return $this->error('数据库SQL文件不存在: ' . basename($sql_file));
         }
 
         // 读取SQL文件内容
@@ -76,14 +96,17 @@ class InstallController extends BaseController
             return $this->error('无法读取SQL文件');
         }
 
-        // 执行SQL文件内容（注意：这里存在潜在安全风险，确保SQL文件来源可靠）
+        // 执行SQL文件内容
         $db->exec($sql_query);
 
-        $this->generateConfig();
+        $this->generateConfig($dbType);
 
+        // 生成 .env 文件
+        $dbTypeEnv = $dbType === 'pgsql' ? 'pgsql' : 'mysql';
+        $defaultPort = $adapter->getDefaultPort();
         $env_config = <<<EOF
 # 数据库配置
-DB_TYPE = mysql
+DB_TYPE = {$dbTypeEnv}
 DB_HOST = {$data['host']}
 DB_PORT = {$data['port']}
 DB_NAME = {$data['database']}
@@ -119,20 +142,25 @@ EOF;
     }
 
     /**
-     * 生成配置文件 
+     * 生成配置文件
+     * @param string $dbType 数据库类型 mysql|pgsql
      */
-    protected function generateConfig()
+    protected function generateConfig(string $dbType = 'mysql')
     {
+        $connectionName = $dbType === 'pgsql' ? 'pgsql' : 'mysql';
+        $defaultPort = $dbType === 'pgsql' ? 5432 : 3306;
+        $defaultCharset = $dbType === 'pgsql' ? 'utf8' : 'utf8mb4';
+
         // 1、think-orm配置文件
         $think_orm_config = <<<EOF
 <?php
 
 return [
-    'default' => 'mysql',
+    'default' => '{$connectionName}',
     'connections' => [
-        'mysql' => [
+        '{$connectionName}' => [
             // 数据库类型
-            'type' => env('DB_TYPE', 'mysql'),
+            'type' => env('DB_TYPE', '{$connectionName}'),
             // 服务器地址
             'hostname' => env('DB_HOST', '127.0.0.1'),
             // 数据库名
@@ -142,14 +170,14 @@ return [
             // 数据库密码
             'password' => env('DB_PASSWORD', '123456'),
             // 数据库连接端口
-            'hostport' => env('DB_PORT', 3306),
+            'hostport' => env('DB_PORT', {$defaultPort}),
             // 数据库连接参数
             'params' => [
                 // 连接超时3秒
                 \PDO::ATTR_TIMEOUT => 3,
             ],
             // 数据库编码默认采用utf8
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'charset' => env('DB_CHARSET', '{$defaultCharset}'),
             // 数据库表前缀
             'prefix' => env('DB_PREFIX', ''),
             // 断线重连
@@ -220,25 +248,19 @@ EOF;
 
      /**
      * 获取pdo连接
-     * @param $host
-     * @param $username
-     * @param $password
-     * @param $port
-     * @param $database
+     * @param DatabaseAdapter $adapter
+     * @param string $host
+     * @param string $username
+     * @param string $password
+     * @param int $port
+     * @param string $charset
+     * @param string|null $database
      * @return \PDO
      */
-    protected function getPdo($host, $username, $password, $port, $charset, $database = null): \PDO
+    protected function getPdo(DatabaseAdapter $adapter, string $host, string $username, string $password, int $port, string $charset, string $database = null): \PDO
     {
-        $dsn = "mysql:host=$host;port=$port;charset=$charset";
-        if ($database) {
-            $dsn .= "dbname=$database";
-        }
-        $params = [
-            \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
-            \PDO::ATTR_EMULATE_PREPARES => false,
-            \PDO::ATTR_TIMEOUT => 5,
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-        ];
+        $dsn = $adapter->buildDsn($host, $port, $charset, $database);
+        $params = $adapter->getPdoParams();
         return new \PDO($dsn, $username, $password, $params);
     }
 }
