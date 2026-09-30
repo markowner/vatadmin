@@ -10,7 +10,7 @@ use plugin\vatadmin\app\model\admin\AdminDict;
 use plugin\vatadmin\app\model\admin\AdminNotice;
 use plugin\vatadmin\service\tools\Aes;
 use support\Container;
-use support\Redis;
+use support\Cache;
 use support\Request;
 use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
 use Tinywan\Jwt\JwtToken;
@@ -82,7 +82,7 @@ class UserController extends BaseController
             }
             $captchaInfo = json_decode(base64_decode($captcha), true);
             //检测验证
-            $res = Captcha::type($captchaInfo['t'])->check($captchaInfo['k'], $captchaInfo['x'], 8, Redis::get($captchaInfo['k']));
+            $res = Captcha::type($captchaInfo['t'])->check($captchaInfo['k'], $captchaInfo['x'], 8, Cache::get($captchaInfo['k']));
             if(!$res){
                 return $this->error('安全验证未通过');
             }
@@ -232,8 +232,7 @@ class UserController extends BaseController
         $type = 'slider';
         $data = Captcha::type($type)->config($params)->get();
         //缓存secret 1分钟
-        Redis::set($data['key'], $data['secret']);
-        Redis::expire($data['key'], 60);
+        Cache::set($data['key'], $data['secret'], 60);
         return $this->ok('ok',$data);
     }
 }

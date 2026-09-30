@@ -3,7 +3,7 @@
 namespace plugin\vatadmin\app\model\admin;
 
 use plugin\vatadmin\service\tools\Enum;
-use support\Redis;
+use support\Cache;
 use think\Model;
 
 /**
@@ -45,29 +45,25 @@ class AdminDict extends Model
 
     public static function refreshCache(){
         $list = self::getOkAll();
-        $fieldsToKeep = array_column($list->toArray(), 'code');
         $dictKey = env('VAT_ADMIN_DICT_KEY');
-        $dicts = Redis::hGetAll($dictKey);
-        foreach ($dicts as $field => $value){
-            // 如果字段不在要保留的字段列表中
-            if (!in_array($field, $fieldsToKeep)) {
-                // 删除这个字段
-                Redis::hDel($dictKey, $field);
-            }
+
+        // 构建字典映射（code => value）
+        $dictMap = [];
+        $frontEndJson = [];
+        foreach ($list as $v){
+            $dictMap[$v['code']] = $v['value'];
+            $frontEndJson[$v['code']] = ['name' => $v['name'], 'options' => json_decode($v['value'], true)];
         }
-        $json = [];
-        foreach ($list as $k => $v){
-            Redis::hSet($dictKey, $v['code'], $v['value']);
-            $json[$v['code']] = ['name' => $v['name'],'options' => json_decode($v['value'], true)];
-        }
-        //更新前端缓存文件
-        Redis::set($dictKey.'FrontEnd', json_encode($json, JSON_UNESCAPED_UNICODE));
-//        vat_base_build($json, 'vat_dict.json');
+
+        // 缓存字典数据
+        Cache::set($dictKey, $dictMap);
+        // 缓存前端字典数据
+        Cache::set($dictKey . 'FrontEnd', $frontEndJson);
     }
 
 
     public static function getDict(){
-        $dict = Redis::get(env('VAT_ADMIN_DICT_KEY') . 'FrontEnd');
-        return $dict ? json_decode($dict, true) : [];
+        $dict = Cache::get(env('VAT_ADMIN_DICT_KEY') . 'FrontEnd');
+        return $dict ?: [];
     }
 }

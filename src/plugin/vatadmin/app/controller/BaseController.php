@@ -13,7 +13,7 @@ use Rap2hpoutre\FastExcel\FastExcel;
 use plugin\vatadmin\service\internal\task\TaskClient;
 use Shopwwi\WebmanFilesystem\Facade\Storage;
 use support\Log;
-use support\Redis;
+use support\Cache;
 use support\Request;
 use Tinywan\ExceptionHandler\Exception\BadRequestHttpException;
 use Tinywan\Jwt\JwtToken;
@@ -658,7 +658,7 @@ class BaseController{
      */
     public function buildDict(){
         //获取字典
-        $dictMap = Redis::hGetAll(env('VAT_ADMIN_DICT_KEY'));
+        $dictMap = Cache::get(env('VAT_ADMIN_DICT_KEY')) ?: [];
         $dict = [];
         foreach ($this->pageInfo['tpl_json']['fields'] as $fields){
             if(isset($fields['config']['dict']) && $fields['config']['dict']){
